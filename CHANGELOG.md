@@ -2,6 +2,10 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.11
+- Exported files are named after the person (signed name, or the name in a title like "Maria’s Goals") and include the size, e.g. grant-rogers-goal-wheel-desktop-1920x1080.png
+- Export and ⋯ menus sit slightly lower, with a gap below the top bar
+
 ## v1.10
 - The editing window hides while the Export (or ⋯) menu is open and comes back when it closes
 - Example wheel is titled "Sam’s Goals"
