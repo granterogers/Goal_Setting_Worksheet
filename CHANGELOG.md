@@ -2,6 +2,11 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.9
+- Each Export item (desktop wallpaper, phone wallpaper, AI collage desktop, AI collage phone) has a ▾ to pick its size: common PC screen sizes, popular iPhone, Samsung and Pixel models, or a custom size
+- Phone layout now adapts to any phone shape, and the phone preview matches the chosen phone
+- Removed the duplicate "This is an example" banner above the poster
+
 ## v1.8
 - Poster fills much more of the screen and sits right next to the editing window
 - Editing window is always open on desktop (Hobbies → Goals selected at the start); no close button

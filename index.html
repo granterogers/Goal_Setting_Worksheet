@@ -75,6 +75,21 @@ button,input,textarea,select{font:inherit;color:inherit}
 .menu button{display:flex;justify-content:space-between;gap:14px;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
 .menu button:hover,.menu button:focus-visible{background:var(--field)}
 .menu small{color:var(--muted);font-size:12px}
+.menu{min-width:330px}
+.mrow{display:flex;align-items:stretch;gap:2px}
+.mrow>button:first-child{flex:1}
+.menu .caret{flex:none;width:38px;justify-content:center;padding:9px 0;color:var(--muted);font-size:13px}
+.menu .caret[aria-expanded="true"]{background:var(--field);color:var(--ink)}
+.resmenu{margin:4px 2px 6px;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--field);max-height:min(52vh,420px);overflow:auto}
+.resmenu .rtitle{font-size:12px;font-weight:700;color:var(--muted);margin:2px 6px 4px}
+.menu .resmenu button{padding:7px 8px;font-size:13.5px}
+.menu .resmenu button:hover{background:var(--panel)}
+.resmenu button[aria-checked="true"]{font-weight:700}
+.resmenu button[aria-checked="true"]::before{content:'✓ ';color:var(--rose)}
+.rescustom{display:flex;align-items:center;gap:6px;padding:6px 6px 2px}
+.rescustom input{width:78px;border:1.5px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 7px;font-size:14px}
+.rescustom input:focus{outline:none;border-color:var(--focus)}
+.rescustom .btn{padding:5px 10px;font-size:13px}
 .menu hr{border:0;border-top:1px solid var(--line);margin:5px 4px}
 
 /* workspace */
@@ -223,11 +238,12 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
     <div class="menuwrap">
       <button class="btn primary" id="dlBtn" aria-haspopup="true" aria-expanded="false">Export ▾</button>
       <div class="menu" id="dlMenu" hidden>
-        <button data-dl="desktop">Desktop wallpaper <small>PNG</small></button>
-        <button data-dl="phone">Phone wallpaper <small>PNG</small></button>
+        <div class="mrow"><button data-dl="desktop">Desktop wallpaper <small data-reslabel="desktop"></small></button><button class="caret" data-res="desktop" aria-label="Choose desktop wallpaper size" aria-expanded="false">▾</button></div>
+        <div class="mrow"><button data-dl="phone">Phone wallpaper <small data-reslabel="phone"></small></button><button class="caret" data-res="phone" aria-label="Choose phone wallpaper size" aria-expanded="false">▾</button></div>
         <hr>
-        <button data-dl="collage-desktop">Generate collage, desktop <small>AI</small></button>
-        <button data-dl="collage-phone">Generate collage, phone <small>AI</small></button>
+        <div class="mrow"><button data-dl="collage-desktop">AI collage, desktop <small data-reslabel="collage-desktop"></small></button><button class="caret" data-res="collage-desktop" aria-label="Choose desktop collage size" aria-expanded="false">▾</button></div>
+        <div class="mrow"><button data-dl="collage-phone">AI collage, phone <small data-reslabel="collage-phone"></small></button><button class="caret" data-res="collage-phone" aria-label="Choose phone collage size" aria-expanded="false">▾</button></div>
+        <div class="resmenu" id="resMenu" hidden></div>
       </div>
     </div>
     <div class="menuwrap">
@@ -245,7 +261,6 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 
 <main class="app">
   <div class="stage" id="stage">
-    <div class="exbadge" id="exBadge" hidden>This is an example wheel. Untick “Show example” to go back to yours.</div>
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
   </div>
 
@@ -339,7 +354,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.8';
+const APP_VERSION = 'v1.9';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -398,6 +413,7 @@ function blankState(){
   return {
     v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
     cStyle:'board', cExtra:'',
+    res:{desktop:[3840,2160], phone:[1290,2796], 'collage-desktop':[3840,2160], 'collage-phone':[1290,2796]},
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
 }
@@ -412,6 +428,8 @@ function normalise(s){
     goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
   if(typeof out.sig!=='string' || !out.sig.startsWith('data:image/')) out.sig='';
   if(typeof out.cExtra!=='string') out.cExtra='';
+  { const d=blankState().res, r=(s.res && typeof s.res==='object') ? s.res : {};
+    out.res={}; for(const k in d){ const v=r[k]; out.res[k]=(Array.isArray(v) && v.length===2 && v.every(n=>Number.isInteger(n) && n>=320 && n<=8000)) ? v : d[k]; } }
   if(!THEMES[out.theme]) out.theme='colour';
   if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
   return out;
@@ -775,14 +793,17 @@ function drawLayout(ctx,W,H,mode,interactive){
     const h=legendHeight(lu,maxW,u*2);
     drawLegend(ctx,T,x0+m,H-m-h,lu,maxW,u*2);
   } else if(mode==='phone'){
-    u=W/100; R=W*.43; cx=W/2; cy=H*.405;
-    drawTitle(ctx,T,cx,cy-R*1.16-u*4.5,u*9.5,rects);
-    const ly=cy+R*1.17+u*6;
-    const lu=u*3.0, lw=u*80;
-    const bottom=drawLegend(ctx,T,(W-lw)/2+u*2,ly,lu,lw,u*2.2);
-    const by=bottom+u*7;
-    drawSignBlock(ctx,T,u*7,by,u*3.2,u*42,'left',interactive,rects);
-    drawDateBlock(ctx,T,W-u*7-u*36,by,u*3.2,u*36,'right',interactive,rects);
+    // everything is sized in units of v so short and tall phones both fit
+    const v=Math.min(W/100, H/196); u=v; cx=W/2; R=v*43;
+    const stackH=v*173.3, top=Math.max(v*6,(H-stackH)*.42);
+    const base=top+v*8;
+    drawTitle(ctx,T,cx,base,v*9.5,rects);
+    cy=base+v*4.5+R*1.16;
+    const ly=cy+R*1.17+v*6, lw=v*80;
+    const bottom=drawLegend(ctx,T,cx-lw/2+v*2,ly,v*3.0,lw,v*2.2);
+    const by=bottom+v*7;
+    drawSignBlock(ctx,T,cx-v*43,by,v*3.2,v*42,'left',interactive,rects);
+    drawDateBlock(ctx,T,cx+v*43-v*36,by,v*3.2,v*36,'right',interactive,rects);
   } else {   // 'print-portrait': A4 portrait PDF
     u=W/100; R=u*37; cx=W/2; cy=H*.43;
     drawTitle(ctx,T,cx,u*11,u*6.6,rects);
@@ -801,14 +822,23 @@ function legendHeight(u,maxW,rowGap){
 // ---------- on-screen canvas ----------
 const $=s=>document.querySelector(s);
 const canvas=$('#poster'), ctx=canvas.getContext('2d'), stage=$('#stage');
-const PREVIEW={desktop:[297,210], phone:[1290,2796]};     // shape of the on-screen poster
-const EXPORT={desktop:[3840,2160], phone:[1290,2796]};    // wallpaper pixel sizes
+const previewShape = mode => mode==='desktop' ? [297,210] : state.res.phone;   // shape of the on-screen poster
+const DESKTOP_RES=[
+  ['HD laptop',1366,768], ['MacBook Air',1440,900], ['Full HD',1920,1080], ['Full HD+ (16:10)',1920,1200],
+  ['QHD',2560,1440], ['MacBook Pro 14"',3024,1964], ['Ultrawide',3440,1440], ['4K UHD',3840,2160], ['5K (iMac)',5120,2880],
+];
+const PHONE_RES=[
+  ['iPhone SE',750,1334], ['iPhone X / XS / 11 Pro',1125,2436], ['iPhone 12 / 13 / 14',1170,2532],
+  ['iPhone 15 / 15 Pro / 16',1179,2556], ['iPhone 16 Pro',1206,2622], ['iPhone 15 Pro Max / 16 Plus',1290,2796],
+  ['iPhone 16 Pro Max',1320,2868], ['Samsung Galaxy S24 / S25',1080,2340], ['Samsung Galaxy S24 / S25 Ultra',1440,3120],
+  ['Google Pixel 8 / 9',1080,2400], ['Google Pixel 9 Pro',1280,2856],
+];
 function sizeCanvas(){
   const app=stage.parentElement, cs=getComputedStyle(app);
   const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight), padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
   const mobile=window.matchMedia('(max-width:860px)').matches;
   const edW = mobile ? 0 : $('#editor').offsetWidth + 16;
-  const [pw,ph]=PREVIEW[state.preview], ar=pw/ph;
+  const [pw,ph]=previewShape(state.preview), ar=pw/ph;
   const availW=app.clientWidth-padX-edW, availH=app.clientHeight-padY;
   let w=availW, h=w/ar;
   if(h>availH){ h=availH; w=h*ar; }
@@ -973,7 +1003,7 @@ async function processSig(file){
 function wireMenu(btn,menu){
   btn.addEventListener('click',e=>{ e.stopPropagation(); const open=menu.hidden; closeMenus(); menu.hidden=!open; btn.setAttribute('aria-expanded',String(open)); if(open) menu.querySelector('button').focus(); });
 }
-function closeMenus(){ document.querySelectorAll('.menu').forEach(m=>m.hidden=true); document.querySelectorAll('[aria-haspopup]').forEach(b=>b.setAttribute('aria-expanded','false')); }
+function closeMenus(){ if(typeof closeRes==='function' && resKey) closeRes(); document.querySelectorAll('.menu').forEach(m=>m.hidden=true); document.querySelectorAll('[aria-haspopup]').forEach(b=>b.setAttribute('aria-expanded','false')); }
 wireMenu($('#dlBtn'),$('#dlMenu')); wireMenu($('#moreBtn'),$('#moreMenu'));
 document.addEventListener('click',e=>{
   if(!e.target.closest('.menuwrap')) closeMenus();
@@ -1014,7 +1044,7 @@ function download(blob,name){
 }
 async function exportPNG(mode){
   await fontsReady();
-  const [W,H]=EXPORT[mode], c=renderOff(W,H,mode);
+  const [W,H]=state.res[mode], c=renderOff(W,H,mode);
   c.toBlob(b=>{ download(b,`${slug()}-${mode}.png`); toast(mode==='desktop'?'Exported desktop wallpaper':'Exported phone wallpaper'); },'image/png');
 }
 async function exportPDF(){
@@ -1034,6 +1064,39 @@ document.querySelectorAll('[data-dl]').forEach(b=>b.addEventListener('click',()=
   if(k.startsWith('collage-')) openCollage(k.slice(8)); else exportPNG(k);
 }));
 
+// ---------- resolution choices ----------
+const resMenu=$('#resMenu'); let resKey=null;
+const fmtRes = r => `${r[0]} × ${r[1]}`;
+function syncResLabels(){ document.querySelectorAll('[data-reslabel]').forEach(el=>el.textContent=fmtRes(state.res[el.dataset.reslabel])); }
+function openRes(key){
+  if(resKey===key){ closeRes(); return; }
+  resKey=key; const list = key.endsWith('phone') ? PHONE_RES : DESKTOP_RES, cur=state.res[key];
+  const row=document.querySelector(`.caret[data-res="${key}"]`).parentElement;
+  row.after(resMenu);
+  document.querySelectorAll('.caret').forEach(c=>c.setAttribute('aria-expanded', String(c.dataset.res===key)));
+  const isPreset=list.some(([,w,h])=>w===cur[0]&&h===cur[1]);
+  resMenu.innerHTML='<p class="rtitle">Choose a size</p>'+list.map(([n,w,h])=>
+    `<button role="menuitemradio" aria-checked="${w===cur[0]&&h===cur[1]}" data-w="${w}" data-h="${h}">${n} <small>${w} × ${h}</small></button>`).join('')+
+    `<button role="menuitemradio" aria-checked="${!isPreset}" data-custom="1">Custom size… <small>${isPreset?'':fmtRes(cur)}</small></button>
+     <div class="rescustom" hidden><input type="number" min="320" max="8000" aria-label="Width in pixels" value="${cur[0]}"> × <input type="number" min="320" max="8000" aria-label="Height in pixels" value="${cur[1]}"><button class="btn primary">Use</button></div>`;
+  resMenu.hidden=false;
+  resMenu.querySelectorAll('button[data-w]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); setRes(key,[+b.dataset.w,+b.dataset.h]); }));
+  const custom=resMenu.querySelector('.rescustom'), [wIn,hIn]=custom.querySelectorAll('input');
+  resMenu.querySelector('[data-custom]').addEventListener('click',e=>{ e.stopPropagation(); custom.hidden=false; wIn.focus(); wIn.select(); });
+  const apply=()=>{ const w=Math.round(+wIn.value), h=Math.round(+hIn.value);
+    if(!(w>=320 && w<=8000 && h>=320 && h<=8000)){ toast('Use a width and height between 320 and 8000 pixels'); return; }
+    setRes(key,[w,h]); };
+  custom.querySelector('.btn').addEventListener('click',e=>{ e.stopPropagation(); apply(); });
+  [wIn,hIn].forEach(i=>i.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); } }));
+}
+function closeRes(){ resKey=null; resMenu.hidden=true; document.querySelectorAll('.caret').forEach(c=>c.setAttribute('aria-expanded','false')); }
+function setRes(key,r){
+  state.res[key]=r; persist(); syncResLabels(); closeRes();
+  toast(`${key.startsWith('collage')?'Collage':'Wallpaper'} size set to ${fmtRes(r)}`);
+  if(key==='phone' && state.preview==='phone') relayout();
+}
+document.querySelectorAll('.caret').forEach(c=>c.addEventListener('click',e=>{ e.stopPropagation(); openRes(c.dataset.res); }));
+
 // ---------- more menu: areas, save / open / reset ----------
 $('#saveFile').addEventListener('click',()=>{
   closeMenus();
@@ -1043,13 +1106,13 @@ const fileIn=$('#fileIn');
 $('#openFile').addEventListener('click',()=>{ closeMenus(); setExample(false); fileIn.click(); });
 fileIn.addEventListener('change',async()=>{
   const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
-  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
+  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
   catch(e){ toast('That file isn’t a saved goal wheel'); }
 });
 $('#resetAll').addEventListener('click',()=>{
   closeMenus(); setExample(false);
   if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
-  state=blankState(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
+  state=blankState(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout();
 });
 
 let toastT=0;
@@ -1069,7 +1132,7 @@ const STYLE_WORDS = {
 };
 const dlg=$('#collageDlg'), cCanvas=$('#cCanvas'), cctx=cCanvas.getContext('2d'), cStatus=$('#cStatus'), cBar=$('#cBar'),
       cStyle=$('#cStyle'), cExtra=$('#cExtra'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn'), cDownload=$('#cDownload');
-const COLLAGE_SIZE={desktop:[3840,2160], phone:[1290,2796]};
+const collageSize = f => state.res['collage-'+f];
 const firstLine = t => t.split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,2).join(' and ').replace(/\s+/g,' ').slice(0,180);
 function sceneList(){
   return state.areas.map(a=>{
@@ -1135,9 +1198,9 @@ function drawCollage(ctx,W,H,format,scenes,imgs){
 }
 function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
 let cJob=0, cFormat='desktop', cScenes=[], cImgs=[], cTainted=false, cBusy=false;
-function redrawCollage(){ const [W,H]=COLLAGE_SIZE[cFormat]; drawCollage(cctx,W,H,cFormat,cScenes,cImgs); }
+function redrawCollage(){ const [W,H]=collageSize(cFormat); drawCollage(cctx,W,H,cFormat,cScenes,cImgs); }
 function sceneSize(format,n){
-  const [W,H]=COLLAGE_SIZE[format], f=frameGeom(collageLayout(W,H,n,format)[0],0);
+  const [W,H]=collageSize(format), f=frameGeom(collageLayout(W,H,n,format)[0],0);
   const scale=1024/Math.max(f.pw,f.ph);   // ask for about 1024px on the long side
   const r16=v=>Math.max(256,Math.round(v*scale/16)*16);
   return [r16(f.pw), r16(f.ph)];
@@ -1173,7 +1236,7 @@ async function fetchScene(i,w,h,seed,job){
 async function runCollage(){
   const job=++cJob; cBusy=true; cTainted=false;
   cScenes=sceneList();
-  const [W,H]=COLLAGE_SIZE[cFormat]; cCanvas.width=W; cCanvas.height=H;
+  const [W,H]=collageSize(cFormat); cCanvas.width=W; cCanvas.height=H;
   cDownload.disabled=true;
   if(!cScenes.length){ cImgs=[]; redrawCollage(); cBar.style.width='0'; setStatus('Write at least one goal on the wheel first, then try again.',true); cBusy=false; return; }
   cImgs=cScenes.map(()=>null); redrawCollage();
@@ -1240,7 +1303,7 @@ function exampleState(){
   e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
   return e;
 }
-const SHARED=['theme','preview','cStyle','cExtra'];
+const SHARED=['theme','preview','cStyle','cExtra','res'];
 function setExample(on){
   if(on===exampleOn) return;
   closePop(); closeMenus(); if(!editor.hidden) select(null,null,false);
@@ -1252,9 +1315,9 @@ function setExample(on){
     SHARED.forEach(k=>ownState[k]=state[k]);
     exampleOn=false; state=ownState; ownState=null; persist();
   }
-  $('#exampleToggle').checked=on; $('#exBadge').hidden=!on;
+  $('#exampleToggle').checked=on;
   resetCollage();
-  loadSig(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
+  loadSig(); syncToggles(); syncCollageUI(); syncResLabels(); select(null,null,false); relayout();
 }
 $('#exampleToggle').addEventListener('change',e=>setExample(e.target.checked));
 
@@ -1340,7 +1403,7 @@ window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(
 $('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
 loadSig();
-syncToggles(); syncCollageUI(); select(null,null,false); relayout();
+syncToggles(); syncCollageUI(); syncResLabels(); select(null,null,false); relayout();
 mqMobile.addEventListener('change',()=>select(mqMobile.matches?null:sel.area, mqMobile.matches?null:(sel.ring||'goals'), false));
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
 window.__goalWheel={get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
