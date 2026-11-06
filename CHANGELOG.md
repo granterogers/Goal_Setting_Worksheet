@@ -2,6 +2,13 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.8
+- Poster fills much more of the screen and sits right next to the editing window
+- Editing window is always open on desktop (Hobbies → Goals selected at the start); no close button
+- Enter on the last ring moves to the next area
+- Example mode shows a short note in the editing window
+- Added cloudflare-worker.js: free AI picture service (Cloudflare Workers AI) for the collage
+
 ## v1.7
 - Larger wheel, legend, signature and date on both desktop and phone; phone wheel moved up
 - Removed the "Update on" reminder text

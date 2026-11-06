@@ -78,13 +78,18 @@ button,input,textarea,select{font:inherit;color:inherit}
 .menu hr{border:0;border-top:1px solid var(--line);margin:5px 4px}
 
 /* workspace */
-.app{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px}
+.app{flex:1;min-height:0;display:flex;justify-content:center;gap:16px;padding:10px 16px}
 .stage{flex:1;min-width:0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
 canvas#poster{display:block;border-radius:6px;box-shadow:var(--shadow);touch-action:manipulation}
 
 /* area editor */
 .editor[hidden]{display:block!important;visibility:hidden}
-@media (min-width:1500px){.app::before{content:'';flex:none;width:340px}}
+@media (min-width:861px){#closeEd,#doneBtn{display:none}}
+#edLocked{padding:4px 2px}
+#edLocked h3{font:400 20px/1.2 var(--display);margin:0 0 6px}
+#edLocked p{margin:0;color:var(--muted);font-size:14px}
+.editor:not(.locked) #edLocked{display:none}
+.editor.locked #edForm{display:none}
 .editor{flex:none;width:340px;align-self:center;max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
 .area-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .swatch{width:14px;height:14px;border-radius:50%;flex:none}
@@ -192,7 +197,6 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   .glabel{display:none}
   .app{padding:10px}
   .editor[hidden]{display:none!important}
-  .app::before{display:none}
   .editor{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;max-height:58dvh;z-index:20}
   .dlg{grid-template-columns:1fr}
   .frame{min-height:180px}
@@ -246,6 +250,8 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
+    <div id="edLocked"><h3>This is an example</h3><p>Look around for ideas. Untick “Show example” at the top to go back to your own wheel and write in it.</p></div>
+    <div id="edForm">
     <div class="area-head">
       <span class="swatch" id="areaSwatch"></span>
       <input id="areaName" aria-label="Life area name" maxlength="40">
@@ -265,6 +271,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
       <button class="btn" id="prevArea">Previous</button>
       <button class="btn" id="nextArea">Next area</button>
       <button class="btn primary grow" id="doneBtn">Done</button>
+    </div>
     </div>
   </aside>
 </main>
@@ -332,7 +339,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.7';
+const APP_VERSION = 'v1.8';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -797,11 +804,16 @@ const canvas=$('#poster'), ctx=canvas.getContext('2d'), stage=$('#stage');
 const PREVIEW={desktop:[297,210], phone:[1290,2796]};     // shape of the on-screen poster
 const EXPORT={desktop:[3840,2160], phone:[1290,2796]};    // wallpaper pixel sizes
 function sizeCanvas(){
+  const app=stage.parentElement, cs=getComputedStyle(app);
+  const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight), padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+  const mobile=window.matchMedia('(max-width:860px)').matches;
+  const edW = mobile ? 0 : $('#editor').offsetWidth + 16;
   const [pw,ph]=PREVIEW[state.preview], ar=pw/ph;
-  const availW=stage.clientWidth, availH=stage.clientHeight-4;
+  const availW=app.clientWidth-padX-edW, availH=app.clientHeight-padY;
   let w=availW, h=w/ar;
   if(h>availH){ h=availH; w=h*ar; }
-  w=Math.max(120,w); h=Math.max(120,h);
+  w=Math.max(120,Math.floor(w)); h=Math.max(120,Math.floor(h));
+  stage.style.flex = mobile ? '1 1 auto' : `0 0 ${w}px`;
   const dpr=Math.min(Math.max(window.devicePixelRatio||1,2),3);
   canvas.style.width=w+'px'; canvas.style.height=h+'px';
   canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
@@ -812,7 +824,7 @@ function render(){
 }
 let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
 const relayout=()=>{ sizeCanvas(); render(); };
-new ResizeObserver(()=>relayout()).observe(stage);
+new ResizeObserver(()=>relayout()).observe(stage.parentElement);
 
 function hitTest(ev){
   const rect=canvas.getBoundingClientRect();
@@ -847,8 +859,12 @@ canvas.addEventListener('click',ev=>{
 const editor=$('#editor'), areaName=$('#areaName'), areaSwatch=$('#areaSwatch');
 const tas=[...document.querySelectorAll('textarea[data-ring]')];
 function setActiveField(ring){ document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===ring)); }
+const mqMobile=window.matchMedia('(max-width:860px)');
+function defaultArea(){ const i=state.areas.findIndex(a=>a.c===6); return i>=0 ? i : state.areas.length-1; }
 function select(area, ring, focus){
-  const wasOpen=!editor.hidden;
+  if(exampleOn){ sel={area:null,ring:null}; editor.classList.add('locked'); editor.hidden=mqMobile.matches; schedule(); return; }
+  editor.classList.remove('locked');
+  if(area===null && !mqMobile.matches){ area=defaultArea(); ring='goals'; focus=false; }
   sel={area, ring};
   if(area===null){ editor.hidden=true; }
   else {
@@ -869,8 +885,8 @@ tas.forEach((t,i)=>{
   t.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area][t.dataset.ring]=t.value; persist(); schedule(); });
   t.addEventListener('focus',()=>{ if(sel.area!==null && sel.ring!==t.dataset.ring){ sel.ring=t.dataset.ring; setActiveField(sel.ring); schedule(); } });
   t.addEventListener('keydown',e=>{
-    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); if(i<tas.length-1) tas[i+1].focus(); else done(); }
-    if(e.key==='Escape') done();
+    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); if(i<tas.length-1) tas[i+1].focus(); else if(mqMobile.matches) done(); else { const n=state.areas.length; select((sel.area+1)%n,'goals',true); } }
+    if(e.key==='Escape' && mqMobile.matches) done();
   });
 });
 areaName.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area].name=areaName.value; persist(); schedule(); });
@@ -1040,8 +1056,11 @@ let toastT=0;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
 
 // ---------- AI collage: one picture per goal, arranged as a vision board ----------
-// Optional free publishable key from enter.pollinations.ai. Without it, the free anonymous service is used (slow).
+// Free picture service: a Cloudflare Worker running Workers AI (see cloudflare-worker.js in the repo).
+// Paste its address here. Without it, the slow anonymous Pollinations service is used.
+const IMAGE_WORKER = '';
 const POLLEN_KEY = '';
+const FAST = !!(IMAGE_WORKER || POLLEN_KEY);
 const STYLE_WORDS = {
   board: 'A bright, joyful, high-quality editorial photograph, like a page from a beautiful magazine',
   photo: 'A dreamy, cinematic photograph with soft golden light and gentle depth of field',
@@ -1132,6 +1151,7 @@ function loadImage(url, cors){
   });
 }
 function sceneUrl(prompt,w,h,seed){
+  if(IMAGE_WORKER) return `${IMAGE_WORKER}?prompt=${encodeURIComponent(prompt)}&seed=${seed}`;
   const q=`width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`;
   return POLLEN_KEY
     ? `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${q}&key=${encodeURIComponent(POLLEN_KEY)}`
@@ -1145,7 +1165,7 @@ async function fetchScene(i,w,h,seed,job){
     catch(e){
       if(job!==cJob) return null;
       try{ const im=await loadImage(url,false); cTainted=true; return im; }   // shows, but can't be saved as one file
-      catch(_){ if(attempt===0) await wait(POLLEN_KEY ? 3000 : 46000); }
+      catch(_){ if(attempt===0) await wait(FAST ? 3000 : 46000); }
     }
   }
   return false;
@@ -1160,13 +1180,13 @@ async function runCollage(){
   const [w,h]=sceneSize(cFormat,cScenes.length), seed=Math.floor(Math.random()*1e8);
   const n=cScenes.length; let done=0;
   const update=()=>{ cBar.style.width=(done/n*100)+'%';
-    setStatus(done<n ? `Painting picture ${Math.min(done+1,n)} of ${n}…${POLLEN_KEY?'':' The free service makes about one picture a minute.'}` : ''); };
+    setStatus(done<n ? `Painting picture ${Math.min(done+1,n)} of ${n}…${FAST?'':' The free service makes about one picture a minute.'}` : ''); };
   update();
-  const concurrency = POLLEN_KEY ? 3 : 1; let next=0;
+  const concurrency = FAST ? 3 : 1; let next=0;
   async function worker(){
     while(next<n && job===cJob){
       const i=next++;
-      if(!POLLEN_KEY && i>0) await wait(46000);
+      if(!FAST && i>0) await wait(46000);
       const im=await fetchScene(i,w,h,seed,job);
       if(job!==cJob) return;
       cImgs[i]=im; done++; redrawCollage(); update();
@@ -1234,7 +1254,7 @@ function setExample(on){
   }
   $('#exampleToggle').checked=on; $('#exBadge').hidden=!on;
   resetCollage();
-  loadSig(); syncToggles(); syncCollageUI(); relayout();
+  loadSig(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
 }
 $('#exampleToggle').addEventListener('change',e=>setExample(e.target.checked));
 
@@ -1272,7 +1292,7 @@ const TOUR=[
   {t:ring('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
   {t:ring('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
   {t:()=>sectorShape(0,1.0,1.17), h:'Life areas', p:'Each slice is one part of your life. Click the name to change it to anything you like.'},
-  {t:wheelShape, h:'Typing in a slice', p:'When you click a slice, a little box opens on the right. Press Enter to jump to the next ring, and click Next area to move around the wheel. Click Done when you finish.'},
+  {t:wheelShape, h:'Typing in a slice', p:'Click any slice and type in the box on the right. Press Enter to jump to the next ring, and Enter again to move to the next part of your life.'},
   {t:()=>fieldShape('title'), h:'The title', p:'Click the title to change it.'},
   {t:()=>fieldShape('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
@@ -1320,7 +1340,8 @@ window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(
 $('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
 loadSig();
-syncToggles(); syncCollageUI(); relayout();
+syncToggles(); syncCollageUI(); select(null,null,false); relayout();
+mqMobile.addEventListener('change',()=>select(mqMobile.matches?null:sel.area, mqMobile.matches?null:(sel.ring||'goals'), false));
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
 window.__goalWheel={get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
 })();
