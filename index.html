@@ -120,6 +120,18 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .frame img{max-width:100%;max-height:62dvh;border-radius:8px;display:block}
 .frame.has{border-style:solid;padding:6px}
 
+.pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
+.pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
+.pop #sigRemove{margin-top:8px}
+#tour{position:fixed;inset:0;z-index:70}
+.tour-block{position:absolute;inset:0}
+.tour-spot{position:fixed;border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(255,255,255,.95),0 0 0 9999px rgba(20,16,32,.58);transition:left .3s,top .3s,width .3s,height .3s}
+.tour-bubble{position:fixed;width:min(340px,92vw);background:var(--panel);color:var(--ink);border-radius:16px;padding:16px 16px 12px;box-shadow:var(--shadow);transition:left .3s,top .3s}
+.tour-bubble h3{font:400 21px/1.2 var(--display);margin:0 0 6px}
+.tour-bubble p{margin:0 0 12px;font-size:15px;line-height:1.5}
+.tour-count{font-size:12.5px!important;color:var(--muted);margin:0 0 4px!important;font-weight:600}
+.tour-bubble .row{gap:8px}
+@media (prefers-reduced-motion: reduce){.tour-spot,.tour-bubble{transition:none}}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;font-weight:500;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -141,34 +153,30 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <header class="bar">
   <div class="brand">Goal Wheel</div>
   <div class="group"><span class="glabel">Output format</span>
-    <div class="seg" role="group" aria-label="Output format">
+    <div class="seg" id="fmtSeg" role="group" aria-label="Output format">
       <button data-preview="desktop" aria-pressed="true">Desktop</button>
       <button data-preview="phone" aria-pressed="false">Phone</button>
     </div></div>
   <div class="group"><span class="glabel">Colours</span>
-    <div class="seg" role="group" aria-label="Colours">
+    <div class="seg" id="colSeg" role="group" aria-label="Colours">
       <button data-theme="colour" aria-pressed="true">Colour</button>
       <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
     </div></div>
   <div class="spacer"></div>
   <div class="actions">
+    <button class="btn" id="tourBtn">Show me how</button>
     <div class="menuwrap">
-      <button class="btn" id="dlBtn" aria-haspopup="true" aria-expanded="false">Download</button>
+      <button class="btn" id="dlBtn" aria-haspopup="true" aria-expanded="false">Export</button>
       <div class="menu" id="dlMenu" hidden>
         <button data-dl="desktop">Desktop wallpaper <small>PNG</small></button>
         <button data-dl="phone">Phone wallpaper <small>PNG</small></button>
-        <hr>
-        <button data-dl="pdf-a4">Printable PDF <small>A4</small></button>
-        <button data-dl="pdf-letter">Printable PDF <small>US Letter</small></button>
-        <button data-dl="pdf-a3">Printable PDF <small>A3</small></button>
+        <button data-dl="pdf">PDF to print <small id="pdfHint">A4 landscape</small></button>
       </div>
     </div>
-    <button class="btn primary" id="collageBtn">AI collage</button>
+    <button class="btn primary" id="collageBtn">Generate AI collage</button>
     <div class="menuwrap">
       <button class="btn icon" id="moreBtn" aria-label="More options" aria-haspopup="true" aria-expanded="false">⋯</button>
       <div class="menu" id="moreMenu" hidden>
-        <button id="addArea">Add a life area</button>
-        <hr>
         <button id="saveFile">Save to file</button>
         <button id="openFile">Open a saved file</button>
         <hr>
@@ -182,7 +190,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <main class="app">
   <div class="stage" id="stage">
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
-    <p class="hint" id="hint">Click any part of the wheel, the title, your name or the date to edit it.</p>
+    <p class="hint" id="hint">Click any part of the wheel, the title, your name or the date to edit it. New here? Click “Show me how”.</p>
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
@@ -206,19 +214,25 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
       <button class="btn" id="nextArea">Next area</button>
       <button class="btn primary grow" id="doneBtn">Done</button>
     </div>
-    <div class="edfoot"><button class="link danger" id="removeArea">Remove this area</button></div>
   </aside>
 </main>
 
 <div class="pop" id="fieldPop" hidden role="dialog" aria-label="Edit poster detail">
   <label><span id="fpLabel">Title</span><input id="fpInput"></label>
+  <div id="sigTools" hidden>
+    <p class="or">or</p>
+    <button class="btn" id="sigUpload" style="width:100%">Upload a picture of your signature</button>
+    <p class="tiny">Sign on white paper and take a photo. The white background is removed for you.</p>
+    <button class="link danger" id="sigRemove" hidden>Remove signature picture</button>
+    <input type="file" id="sigFile" accept="image/*" class="sr" tabindex="-1">
+  </div>
   <div class="row"><button class="btn primary" id="fpDone">Done</button></div>
 </div>
 
 <dialog id="collageDlg" aria-label="AI collage">
   <div class="dlg">
     <div class="dlghead">
-      <h2>AI collage</h2>
+      <h2>Generate AI collage</h2>
       <div class="row">
         <div class="seg" role="group" aria-label="Output format">
           <button data-preview="desktop" aria-pressed="true">Desktop</button>
@@ -261,6 +275,17 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   </div>
 </dialog>
 
+<div id="tour" hidden>
+  <div class="tour-block"></div>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-bubble" id="tourBubble" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <p class="tour-count" id="tourCount"></p>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="row"><button class="link" id="tourSkip">Skip tour</button><span class="spacer"></span><button class="btn" id="tourBack">Back</button><button class="btn primary" id="tourNext">Next</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -276,9 +301,9 @@ const RINGS = {
 };
 const RING_ORDER = ['goals','steps','feel'];
 const LEGEND = [
-  ['goals','One or more goals in this area'],
-  ['steps','Steps I can take in the next 2 weeks'],
-  ['feel','How I feel with this goal achieved'],
+  ['goals','GOALS','One or more goals in this area'],
+  ['steps','STEPS','Steps I can take in the next 2 weeks'],
+  ['feel','FEELINGS','How I feel with this goal achieved'],
 ];
 const MIN_AREAS = 3, MAX_AREAS = 10;
 const STORE_KEY = 'goal-wheel.v1';
@@ -322,7 +347,7 @@ const THEMES = {
 const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 function blankState(){
   return {
-    v:1, title:'My Goals', name:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
+    v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
     cStyle:'board', cEngine:'gpt', cPrompt:'', cEdited:false,
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
@@ -336,6 +361,7 @@ function normalise(s){
   const out = Object.assign(b, s);
   out.areas = s.areas.map((a,i)=>({name:String(a.name).slice(0,40), c:Number.isInteger(a.c)?a.c%PALETTE.length:i%PALETTE.length,
     goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
+  if(typeof out.sig!=='string' || !out.sig.startsWith('data:image/')) out.sig='';
   if(!THEMES[out.theme]) out.theme='colour';
   if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
   return out;
@@ -346,6 +372,17 @@ let saveTimer=null;
 let persist = function(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
 
 let sel = {area:null, ring:null};
+let sigImg = null;           // uploaded signature picture, if any
+function loadSig(){ if(!state.sig){ sigImg=null; return; } const im=new Image(); im.onload=()=>{ if(typeof schedule==='function') schedule(); }; im.src=state.sig; sigImg=im; }
+function restoreDefaults(){
+  let added=0;
+  for(let c=0;c<DEFAULT_AREAS.length;c++){
+    if(state.areas.some(a=>a.c===c)) continue;
+    let idx=state.areas.findIndex(a=>a.c>c); if(idx<0) idx=state.areas.length;
+    state.areas.splice(idx,0,{name:DEFAULT_AREAS[c],c,goals:'',steps:'',feel:''}); added++;
+  }
+  return added;
+}
 let hover = null;          // {area, ring} | {area, label:true}
 let geo = null;            // last on-screen geometry
 let fitInfo = {};          // `${i}:${ring}` -> {ratio, truncated}
@@ -553,7 +590,7 @@ function drawWheel(ctx,cx,cy,R,T,interactive){
     const name=a.name.trim() || (interactive ? 'Name this area' : '');
     if(name){
       const lr = R*1.085, cap = lr*span - R*.08, track=.06;
-      let fs=R*.056;
+      let fs=R*.067;
       const w1 = strW(F.label,name,1) + track*([...name].length-1);
       fs = Math.max(R*.026, Math.min(fs, cap/w1));
       if(interactive && !a.name.trim()) ctx.globalAlpha=.45;
@@ -588,23 +625,42 @@ function wrapPlain(font, text, fs, maxW){
   for(const w of words){ const t=cur?cur+' '+w:w; if(cur && strW(font,t,fs)>maxW){ lines.push(cur); cur=w; } else cur=t; }
   if(cur) lines.push(cur); return lines;
 }
-function drawLegend(ctx,T,x,y,u,maxW,rowGap,dir){
-  // draws rows downward from y; returns bottom y
-  const fs=u*1.0, sw=u*1.45, sh=u*3.4, gap=u*1.0;
-  const uiFont={w:600,fam:F.ui.fam};
-  let yy=y;
-  LEGEND.forEach(([ring,text])=>{
-    const lines=wrapPlain(uiFont,text,fs,maxW-sw-gap);
-    const blockH=Math.max(sh, lines.length*fs*1.25);
-    capsule(ctx,x,yy+(blockH-sh)/2,sw,sh);
-    ctx.fillStyle=T.legend[ring]; ctx.fill();
-    if(T.legendStroke){ ctx.strokeStyle=T.legendStroke; ctx.lineWidth=u*.2; ctx.stroke(); }
-    ctx.fillStyle=T.ink; ctx.font=`600 ${fs}px ${F.ui.fam}`; ctx.textAlign='left'; ctx.textBaseline='middle';
-    const ty=yy+blockH/2-(lines.length-1)*fs*1.25/2;
-    lines.forEach((l,k)=>ctx.fillText(l,x+sw+gap,ty+k*fs*1.25));
-    yy+=blockH+rowGap;
-  });
-  return yy-rowGap;
+function legendSwatch(ctx,T,ring,x,y,w,h,u){
+  capsule(ctx,x,y,w,h);
+  if(T===THEMES.colour){
+    const g=ctx.createLinearGradient(0,y,0,y+h), hues=state.areas.map(a=>PALETTE[a.c]);
+    hues.forEach((hu,i)=>g.addColorStop(hues.length>1?i/(hues.length-1):0, T.fill(hu,ring)));
+    ctx.fillStyle=g;
+  } else ctx.fillStyle=T.legend[ring];
+  ctx.fill();
+  ctx.strokeStyle=T.legendStroke; ctx.lineWidth=u*.2; ctx.stroke();
+}
+// one legend entry: swatch + bold heading + description. Returns its height.
+function legendItem(ctx,T,item,x,y,u,maxW,measureOnly){
+  const [ring,head,desc]=item, hFs=u*1.08, dFs=u*.92, sw=u*1.45, sh=u*3.4, gap=u;
+  const lines=wrapPlain({w:500,fam:F.ui.fam},desc,dFs,maxW-sw-gap);
+  const textH=hFs*1.25+lines.length*dFs*1.25, blockH=Math.max(sh,textH);
+  if(!measureOnly){
+    legendSwatch(ctx,T,ring,x,y+(blockH-sh)/2,sw,sh,u);
+    let ty=y+(blockH-textH)/2;
+    ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillStyle=T.ink;
+    ctx.font=`700 ${hFs}px ${F.ui.fam}`;
+    if('letterSpacing' in ctx) ctx.letterSpacing=(hFs*.08)+'px';
+    ctx.fillText(head,x+sw+gap,ty);
+    if('letterSpacing' in ctx) ctx.letterSpacing='0px';
+    ty+=hFs*1.25; ctx.font=`500 ${dFs}px ${F.ui.fam}`; ctx.fillStyle=T.muted;
+    lines.forEach((l,k)=>ctx.fillText(l,x+sw+gap,ty+k*dFs*1.25));
+  }
+  return blockH;
+}
+function drawLegend(ctx,T,x,y,u,maxW,rowGap){
+  let yy=y; LEGEND.forEach((it,i)=>{ yy+=legendItem(ctx,T,it,x,yy,u,maxW)+(i<LEGEND.length-1?rowGap:0); }); return yy;
+}
+function drawLegendRow(ctx,T,x,y,u,totalW,colGap){
+  const cw=(totalW-colGap*(LEGEND.length-1))/LEGEND.length; let mh=0;
+  LEGEND.forEach(it=>{ mh=Math.max(mh,legendItem(null,T,it,0,0,u,cw,true)); });
+  LEGEND.forEach((it,i)=>{ const h=legendItem(null,T,it,0,0,u,cw,true); legendItem(ctx,T,it,x+i*(cw+colGap),y+(mh-h)/2,u,cw); });
+  return y+mh;
 }
 function drawSignBlock(ctx,T,x,y,u,w,align,interactive,rects){
   // "Signed" label + name over a line
@@ -616,7 +672,12 @@ function drawSignBlock(ctx,T,x,y,u,w,align,interactive,rects){
   const lineY=y+labFs+nameFs*1.05;
   const nm=state.name.trim();
   ctx.font=`${F.sign.w} ${nameFs}px ${F.sign.fam}`;
-  if(nm){ ctx.fillStyle=T.ink; ctx.fillText(nm,lx,lineY-nameFs*.18); }
+  if(sigImg && sigImg.complete && sigImg.naturalWidth){
+    const top=y+labFs*1.3, bh=lineY-top-u*.12;
+    const k=Math.min(w/sigImg.naturalWidth, bh/sigImg.naturalHeight), iw=sigImg.naturalWidth*k, ih=sigImg.naturalHeight*k;
+    ctx.drawImage(sigImg, align==='left'?x:x+w-iw, lineY-u*.12-ih, iw, ih);
+  }
+  else if(nm){ ctx.fillStyle=T.ink; ctx.fillText(nm,lx,lineY-nameFs*.18); }
   else if(interactive){ ctx.fillStyle=T.muted; ctx.globalAlpha=.5; ctx.fillText('Your name',lx,lineY-nameFs*.18); ctx.globalAlpha=1; }
   ctx.strokeStyle=T.ink; ctx.globalAlpha=.35; ctx.lineWidth=Math.max(1,u*.09);
   ctx.beginPath(); ctx.moveTo(x,lineY); ctx.lineTo(x+w,lineY); ctx.stroke(); ctx.globalAlpha=1;
@@ -664,7 +725,7 @@ function drawLayout(ctx,W,H,mode,interactive){
     const lu=u*1.75, maxW=Math.max(u*15, Math.min(u*22, free));
     const h=legendHeight(lu,maxW,u*1.6);
     drawLegend(ctx,T,x0+m,H-m-h,lu,maxW,u*1.6);
-  } else {
+  } else if(mode==='phone'){
     u=W/100; R=W*.40; cx=W/2; cy=H*.49;
     drawTitle(ctx,T,cx,cy-R*1.17-u*5,u*8.6,rects);
     const ly=cy+R*1.17+u*5;
@@ -673,14 +734,19 @@ function drawLayout(ctx,W,H,mode,interactive){
     const by=bottom+u*5;
     drawSignBlock(ctx,T,u*8,by,u*2.6,u*40,'left',interactive,rects);
     drawDateBlock(ctx,T,W-u*8-u*34,by,u*2.6,u*34,'right',interactive,rects);
+  } else {   // 'print-portrait': A4 portrait PDF
+    u=W/100; R=u*37; cx=W/2; cy=H*.43;
+    drawTitle(ctx,T,cx,u*11,u*6.6,rects);
+    const bottom=drawLegendRow(ctx,T,u*6,cy+R*1.17+u*4,u*2.1,u*88,u*3);
+    const by=Math.max(bottom+u*3, H-u*16.5);
+    drawSignBlock(ctx,T,u*6,by,u*2.2,u*38,'left',interactive,rects);
+    drawDateBlock(ctx,T,W-u*6-u*32,by,u*2.2,u*32,'right',interactive,rects);
   }
   const fits=drawWheel(ctx,cx,cy,R,T,interactive);
   return {cx,cy,R,rects,fits,W,H};
 }
 function legendHeight(u,maxW,rowGap){
-  const fs=u, sw=u*1.45, sh=u*3.4, gap=u, uiFont={w:600,fam:F.ui.fam};
-  let h=0; LEGEND.forEach(([,t],i)=>{ const n=wrapPlain(uiFont,t,fs,maxW-sw-gap).length; h+=Math.max(sh,n*fs*1.25)+(i?rowGap:0); });
-  return h;
+  let h=0; LEGEND.forEach((it,i)=>{ h+=legendItem(null,null,it,0,0,u,maxW,true)+(i?rowGap:0); }); return h;
 }
 
 // ---------- on-screen canvas ----------
@@ -771,13 +837,6 @@ $('#doneBtn').addEventListener('click',done);
 $('#closeEd').addEventListener('click',done);
 $('#prevArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area-1+n)%n, 'goals', true); });
 $('#nextArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area+1)%n, 'goals', true); });
-$('#removeArea').addEventListener('click',()=>{
-  if(state.areas.length<=MIN_AREAS){ toast(`A wheel needs at least ${MIN_AREAS} areas`); return; }
-  const a=state.areas[sel.area];
-  const hasText = a.goals.trim()||a.steps.trim()||a.feel.trim();
-  if(hasText && !confirm(`Remove “${a.name||'this area'}” and everything written in it?`)) return;
-  state.areas.splice(sel.area,1); persist(); select(null,null,false);
-});
 function updateMeters(){
   document.querySelectorAll('.field').forEach(f=>{
     const i=f.querySelector('.meter i'), em=f.querySelector('.meter em');
@@ -802,6 +861,9 @@ function openPop(field,x,y){
   popField=field; const cfg=POP[field];
   fpLabel.textContent=cfg.label; fpInput.type=cfg.type; fpInput.placeholder=cfg.ph; fpInput.maxLength=40;
   fpInput.value=state[field]||'';
+  $('#sigTools').hidden = field!=='name';
+  $('#sigRemove').hidden = !state.sig;
+  $('#sigUpload').textContent = state.sig ? 'Upload a different signature picture' : 'Upload a picture of your signature';
   pop.hidden=false;
   const pw=pop.offsetWidth, ph=pop.offsetHeight;
   pop.style.left=Math.max(8,Math.min(window.innerWidth-pw-8, x-pw/2))+'px';
@@ -812,6 +874,41 @@ function closePop(){ if(!pop.hidden){ pop.hidden=true; popField=null; } }
 fpInput.addEventListener('input',()=>{ if(!popField) return; state[popField]=fpInput.value; persist(); schedule(); });
 fpInput.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); closePop(); } });
 $('#fpDone').addEventListener('click',closePop);
+const sigFile=$('#sigFile');
+$('#sigUpload').addEventListener('click',()=>sigFile.click());
+sigFile.addEventListener('change',async()=>{
+  const f=sigFile.files[0]; sigFile.value=''; if(!f) return;
+  try{ state.sig=await processSig(f); loadSig(); persist(); schedule(); $('#sigRemove').hidden=false; toast('Signature added'); closePop(); }
+  catch(e){ toast('That picture couldn’t be used. Try a clear photo of your signature on white paper.'); }
+});
+$('#sigRemove').addEventListener('click',()=>{ state.sig=''; loadSig(); persist(); schedule(); $('#sigRemove').hidden=true; toast('Signature picture removed'); });
+// Turn a photo of a signature into a clean, transparent image
+async function processSig(file){
+  const url=URL.createObjectURL(file);
+  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+  URL.revokeObjectURL(url);
+  const sc=Math.min(1,1000/Math.max(img.width,img.height)), w=Math.max(1,Math.round(img.width*sc)), h=Math.max(1,Math.round(img.height*sc));
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
+  x.drawImage(img,0,0,w,h);
+  const d=x.getImageData(0,0,w,h), p=d.data, hist=new Uint32Array(256); let opaque=0;
+  for(let i=0;i<p.length;i+=4){ if(p[i+3]>200){ hist[Math.round(.299*p[i]+.587*p[i+1]+.114*p[i+2])]++; opaque++; } }
+  let bg=255;
+  if(opaque){ let acc=0; for(let v=0;v<256;v++){ acc+=hist[v]; if(acc>=opaque*.8){ bg=v; break; } } }
+  const hi=bg-18, lo=Math.max(0,bg-110);
+  let minX=w,minY=h,maxX=-1,maxY=-1;
+  for(let i=0,k=0;i<p.length;i+=4,k++){
+    const lum=.299*p[i]+.587*p[i+1]+.114*p[i+2];
+    let a = lum>=hi ? 0 : lum<=lo ? 255 : Math.round((hi-lum)/(hi-lo)*255);
+    a=Math.min(a,p[i+3]); p[i+3]=a;
+    if(a>60){ const px=k%w, py=(k-px)/w; if(px<minX)minX=px; if(px>maxX)maxX=px; if(py<minY)minY=py; if(py>maxY)maxY=py; }
+  }
+  if(maxX<0) throw new Error('No signature found');
+  x.putImageData(d,0,0);
+  const pad=6; minX=Math.max(0,minX-pad); minY=Math.max(0,minY-pad); maxX=Math.min(w-1,maxX+pad); maxY=Math.min(h-1,maxY+pad);
+  const o=document.createElement('canvas'); o.width=maxX-minX+1; o.height=maxY-minY+1;
+  o.getContext('2d').drawImage(c,minX,minY,o.width,o.height,0,0,o.width,o.height);
+  return o.toDataURL('image/png');
+}
 
 // ---------- menus ----------
 function wireMenu(btn,menu){
@@ -829,6 +926,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeMenus(); clo
 function syncToggles(){
   document.querySelectorAll('[data-preview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.preview===state.preview)));
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===state.theme)));
+  $('#pdfHint').textContent = state.preview==='desktop' ? 'A4 landscape' : 'A4 portrait';
 }
 document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{
   if(state.preview===b.dataset.preview) return;
@@ -859,35 +957,26 @@ function download(blob,name){
 async function exportPNG(mode){
   await fontsReady();
   const [W,H]=EXPORT[mode], c=renderOff(W,H,mode);
-  c.toBlob(b=>{ download(b,`${slug()}-${mode}.png`); toast(mode==='desktop'?'Downloaded desktop wallpaper':'Downloaded phone wallpaper'); },'image/png');
+  c.toBlob(b=>{ download(b,`${slug()}-${mode}.png`); toast(mode==='desktop'?'Exported desktop wallpaper':'Exported phone wallpaper'); },'image/png');
 }
-async function exportPDF(paper){
+async function exportPDF(){
   if(!window.jspdf){ toast('The PDF tool didn’t load. Check your connection and reload the page.'); return; }
   await fontsReady();
-  const sizes={a4:[297,210], letter:[279.4,215.9], a3:[420,297]};
-  const [mmW,mmH]=sizes[paper]||sizes.a4;
-  const dpi=paper==='a3'?220:300;
-  const W=Math.round(mmW/25.4*dpi), H=Math.round(mmH/25.4*dpi);
-  const c=renderOff(W,H,'desktop');
-  const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:[mmW,mmH]});
+  const land = state.preview==='desktop';
+  const [mmW,mmH] = land ? [297,210] : [210,297];
+  const W=Math.round(mmW/25.4*300), H=Math.round(mmH/25.4*300);
+  const c=renderOff(W,H, land ? 'desktop' : 'print-portrait');
+  const pdf=new window.jspdf.jsPDF({orientation: land?'landscape':'portrait', unit:'mm', format:'a4'});
   pdf.addImage(c.toDataURL('image/jpeg',.95),'JPEG',0,0,mmW,mmH,undefined,'FAST');
   pdf.save(`${slug()}.pdf`);
-  toast('Downloaded printable PDF');
+  toast('Exported PDF');
 }
 document.querySelectorAll('[data-dl]').forEach(b=>b.addEventListener('click',()=>{
   closeMenus(); const k=b.dataset.dl;
-  if(k.startsWith('pdf-')) exportPDF(k.slice(4)); else exportPNG(k);
+  if(k==='pdf') exportPDF(); else exportPNG(k);
 }));
 
 // ---------- more menu: areas, save / open / reset ----------
-$('#addArea').addEventListener('click',()=>{
-  closeMenus();
-  if(state.areas.length>=MAX_AREAS){ toast(`The wheel holds up to ${MAX_AREAS} areas`); return; }
-  const used=new Set(state.areas.map(a=>a.c));
-  let c=0; while(used.has(c) && c<PALETTE.length-1) c++;
-  state.areas.push({name:'', c, goals:'', steps:'', feel:''});
-  persist(); select(state.areas.length-1, null, true);
-});
 $('#saveFile').addEventListener('click',()=>{
   closeMenus();
   download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), `${slug()}.json`); toast('Saved to file');
@@ -896,13 +985,13 @@ const fileIn=$('#fileIn');
 $('#openFile').addEventListener('click',()=>{ closeMenus(); fileIn.click(); });
 fileIn.addEventListener('change',async()=>{
   const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
-  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
+  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
   catch(e){ toast('That file isn’t a saved goal wheel'); }
 });
 $('#resetAll').addEventListener('click',()=>{
   closeMenus();
   if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
-  state=blankState(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
+  state=blankState(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
 });
 
 let toastT=0;
@@ -1034,10 +1123,71 @@ $('#cOpen').addEventListener('click',()=>{ if(lastImage) window.open(lastImage.s
 const _persist=persist;
 persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
 
+// ---------- guided tour ----------
+const tourEl=$('#tour'), spot=$('#tourSpot'), bubble=$('#tourBubble');
+function elRect(sel){ const r=$(sel).getBoundingClientRect(); return {x:r.left,y:r.top,w:r.width,h:r.height}; }
+function canvasToClient(b){ const r=canvas.getBoundingClientRect(), k=r.width/canvas.width; return {x:r.left+b.x*k, y:r.top+b.y*k, w:b.w*k, h:b.h*k}; }
+function sectorBox(area,r0,r1){
+  const n=state.areas.length, span=2*Math.PI/n, a0=area*span, a1=a0+span; let xs=[],ys=[];
+  for(let t=0;t<=12;t++){ const a=a0+(a1-a0)*t/12; for(const r of [r0,r1]){ const [x,y]=pt(geo.cx,geo.cy,r*geo.R,a); xs.push(x); ys.push(y); } }
+  const x=Math.min(...xs), y=Math.min(...ys); return canvasToClient({x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y});
+}
+const ringBox = ring => () => sectorBox(0, RINGS[ring].r0, RINGS[ring].r1);
+const fieldBox = k => () => geo.rects[k] ? canvasToClient(geo.rects[k]) : null;
+const TOUR=[
+  {t:null, h:'Welcome to your Goal Wheel', p:'This is a happy map of your life. Let’s take a quick look at how it works. It only takes a minute.'},
+  {t:ringBox('goals'), h:'Your GOALS', p:'The big outside ring is for your goals. Click on it, then type what you would love to have in this part of your life.'},
+  {t:ringBox('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
+  {t:ringBox('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
+  {t:()=>sectorBox(0,1.0,1.17), h:'Life areas', p:'Each slice is one part of your life. Click the name to change it to anything you like.'},
+  {t:()=>canvasToClient({x:geo.cx-geo.R,y:geo.cy-geo.R,w:geo.R*2,h:geo.R*2}), h:'Typing in a slice', p:'When you click a slice, a little box opens. Press Enter to jump to the next ring, and click Next area to move around the wheel. Click Done when you finish.'},
+  {t:fieldBox('title'), h:'The title', p:'Click the title to change it.'},
+  {t:fieldBox('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
+  {t:fieldBox('date'), h:'The date', p:'Click the date to change it. Your poster reminds you to come back and update it in two weeks.'},
+  {t:()=>elRect('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer or for printing. Pick Phone to make a tall picture for your phone.'},
+  {t:()=>elRect('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elRect('#dlBtn'), h:'Export', p:'When you are happy, click Export to save your wheel as a wallpaper for your computer or phone, or as a PDF to print and stick on your wall.'},
+  {t:()=>elRect('#collageBtn'), h:'Generate AI collage', p:'Click here to turn your goals into a beautiful picture made by AI. You can use it as a wallpaper too.'},
+  {t:()=>elRect('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
+  {t:()=>elRect('#tourBtn'), h:'That’s it!', p:'Click Show me how any time to see this tour again. Have fun dreaming big!'},
+];
+let tourIdx=0;
+function placeTour(){
+  const step=TOUR[tourIdx]; let r=null;
+  try{ r=step.t ? step.t() : null; }catch(e){ r=null; }
+  const pad=8, vw=window.innerWidth, vh=window.innerHeight;
+  if(r){ spot.style.left=(r.x-pad)+'px'; spot.style.top=(r.y-pad)+'px'; spot.style.width=(r.w+pad*2)+'px'; spot.style.height=(r.h+pad*2)+'px'; }
+  else { spot.style.left=(vw/2)+'px'; spot.style.top=(vh/2)+'px'; spot.style.width='0px'; spot.style.height='0px'; }
+  $('#tourCount').textContent=`Step ${tourIdx+1} of ${TOUR.length}`;
+  $('#tourTitle').textContent=step.h; $('#tourText').textContent=step.p;
+  $('#tourBack').disabled = tourIdx===0;
+  $('#tourNext').textContent = tourIdx===TOUR.length-1 ? 'Finish' : 'Next';
+  const bw=bubble.offsetWidth, bh=bubble.offsetHeight, gap=16;
+  let bx, by;
+  if(!r){ bx=(vw-bw)/2; by=(vh-bh)/2; }
+  else if(r.y+r.h+pad+gap+bh < vh-8){ bx=r.x+r.w/2-bw/2; by=r.y+r.h+pad+gap; }
+  else if(r.y-pad-gap-bh > 8){ bx=r.x+r.w/2-bw/2; by=r.y-pad-gap-bh; }
+  else if(r.x+r.w+pad+gap+bw < vw-8){ bx=r.x+r.w+pad+gap; by=r.y+r.h/2-bh/2; }
+  else if(r.x-pad-gap-bw > 8){ bx=r.x-pad-gap-bw; by=r.y+r.h/2-bh/2; }
+  else { bx=(vw-bw)/2; by=vh-bh-12; }
+  bubble.style.left=Math.max(8,Math.min(vw-bw-8,bx))+'px'; bubble.style.top=Math.max(8,Math.min(vh-bh-8,by))+'px';
+}
+function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); if(!editor.hidden) select(null,null,false); hover=null; render(); tourIdx=0; tourEl.hidden=false; placeTour(); $('#tourNext').focus(); }
+function endTour(){ tourEl.hidden=true; $('#tourBtn').focus(); }
+$('#tourBtn').addEventListener('click',startTour);
+$('#tourNext').addEventListener('click',()=>{ if(tourIdx<TOUR.length-1){ tourIdx++; placeTour(); } else endTour(); });
+$('#tourBack').addEventListener('click',()=>{ if(tourIdx>0){ tourIdx--; placeTour(); } });
+$('#tourSkip').addEventListener('click',endTour);
+document.addEventListener('keydown',e=>{ if(tourEl.hidden) return;
+  if(e.key==='Escape') endTour(); else if(e.key==='ArrowRight') $('#tourNext').click(); else if(e.key==='ArrowLeft') $('#tourBack').click(); });
+window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(placeTour); });
+
 // ---------- boot ----------
+if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
+loadSig();
 syncToggles(); syncCollageUI(); relayout();
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
-window.__goalWheel={get state(){return state}, set(s){state=normalise(s); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop};
+window.__goalWheel={get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
 })();
 </script>
 </body>
