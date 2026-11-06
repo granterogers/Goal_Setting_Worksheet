@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goal Wheel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Figtree:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://js.puter.com/v2/" defer></script>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EEEBF5; --panel:#FFFFFF; --ink:#2A2440; --muted:#6E6888; --line:#DDD8EA;
+  --field:#F7F5FB; --rose:#D93D73; --rose-ink:#FFFFFF; --focus:#5E6AD2;
+  --good:#3FAE73; --warn:#E69A2E; --bad:#D93D73;
+  --sans:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --display:"Marcellus", "Palatino Linotype", Palatino, Georgia, serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#17141F; --panel:#221E2E; --ink:#ECE8F6; --muted:#A79FC0; --line:#363049;
+    --field:#2A2538; --rose:#E85A8B; --focus:#8E98F0;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+.top{max-width:1440px;margin:0 auto;padding:28px 28px 8px;display:flex;align-items:baseline;gap:20px;flex-wrap:wrap}
+.top h1{font:400 34px/1.1 var(--display);margin:0;letter-spacing:.02em}
+.top p{margin:0;color:var(--muted);max-width:60ch}
+
+.wrap{max-width:1440px;margin:0 auto;padding:12px 28px 40px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+@media (max-width:980px){.wrap{grid-template-columns:1fr;padding:12px 14px 32px}.top{padding:20px 14px 4px}}
+
+.stage{position:sticky;top:12px;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
+@media (max-width:980px){.stage{position:static}}
+.tools{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.canvas-box{width:100%;display:flex;justify-content:center}
+canvas#poster{display:block;border-radius:6px;box-shadow:0 1px 2px rgba(42,36,64,.08),0 12px 40px -12px rgba(42,36,64,.28);touch-action:manipulation}
+.stage .hint{margin:0;color:var(--muted);font-size:14px;text-align:center}
+
+.panel{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card h2{font:400 22px/1.2 var(--display);margin:0 0 6px}
+.card h3{font-size:15px;font-weight:700;margin:0 0 10px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+
+.area-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.swatch{width:16px;height:16px;border-radius:50%;flex:none}
+#areaName{flex:1;min-width:0;border:0;border-bottom:1.5px solid var(--line);background:none;font:400 22px/1.2 var(--display);padding:2px 0 4px;border-radius:0}
+#areaName:focus{outline:none;border-bottom-color:var(--focus)}
+
+.field{display:block;margin-bottom:12px;border-radius:12px;padding:10px 10px 8px;border:1.5px solid transparent;background:var(--field);transition:border-color .15s}
+.field.active{border-color:var(--focus)}
+.field .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.field b{font-size:14px}
+.field small{color:var(--muted);font-size:12.5px}
+.field textarea{display:block;width:100%;margin-top:6px;border:0;background:none;resize:vertical;min-height:58px;font-size:15px;line-height:1.45;padding:0}
+.field textarea:focus{outline:none}
+.meter{display:flex;align-items:center;gap:8px;margin-top:4px;height:16px}
+.meter span{flex:none;width:56px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.meter span i{display:block;height:100%;width:0;border-radius:2px;background:var(--good);transition:width .2s}
+.meter em{font-style:normal;font-size:12px;color:var(--muted)}
+.keyhint{font-size:12.5px!important;margin:-2px 0 12px!important}
+
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--rose);border-color:var(--rose);color:var(--rose-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.grow{flex:1}
+.link{border:0;background:none;padding:0;margin-top:10px;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.link:hover{color:var(--bad)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px 5px 8px;font-size:13.5px;font-weight:500;cursor:pointer}
+.chip[aria-current="true"]{border-color:var(--ink)}
+.chip .swatch{width:11px;height:11px}
+
+.inp{display:block;margin-bottom:10px}
+.inp span{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.inp input,.inp select{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:8px 10px;font-size:15px}
+.inp input:focus,.inp select:focus{outline:none;border-color:var(--focus)}
+
+.dl{display:grid;gap:8px}
+.dl button{display:flex;justify-content:space-between;align-items:center;text-align:left;gap:10px}
+.dl button small{font-weight:500;color:var(--muted);font-size:12px}
+.dl .btn.primary small{color:rgba(255,255,255,.82)}
+.pdfrow{display:flex;gap:8px}
+.pdfrow .btn{flex:1}
+.pdfrow select{width:auto;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:0 8px;font-size:14px}
+
+.inp textarea{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.45;resize:vertical}
+.inp textarea:focus{outline:none;border-color:var(--focus)}
+.inp .lab{display:flex;justify-content:space-between;align-items:baseline}
+.inp .lab .link{margin:0}
+.seg.small button{padding:5px 12px;font-size:13px}
+.cresult{margin-top:12px}
+.cresult img{display:block;width:100%;border-radius:10px;background:var(--field)}
+.cstatus{font-size:13px!important;margin-top:10px!important;min-height:1em}
+.cstatus.err{color:var(--bad)!important}
+.note{font-size:12.5px!important;margin-top:10px!important}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Goal Wheel</h1>
+  <p>Write your goals around the heart, then download your wheel for your desktop, your phone, or your wall.</p>
+</header>
+
+<main class="wrap">
+  <section class="stage" aria-label="Poster preview">
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Preview layout">
+        <button data-preview="desktop" aria-pressed="true">Desktop</button>
+        <button data-preview="phone" aria-pressed="false">Phone</button>
+      </div>
+      <div class="seg" role="group" aria-label="Colour style">
+        <button data-theme="colour" aria-pressed="true">Colour</button>
+        <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
+      </div>
+    </div>
+    <div class="canvas-box" id="canvasBox"><canvas id="poster" role="img" aria-label="Your goal wheel"></canvas></div>
+    <p class="hint">Click any part of the wheel to write in it. Click an area’s name to rename it.</p>
+  </section>
+
+  <aside class="panel">
+    <section class="card" id="editor" aria-live="polite">
+      <div id="editorEmpty">
+        <h2>Start with any life area</h2>
+        <p>Click a segment of the wheel. The outer ring holds your goals, the middle ring the steps you’ll take in the next two weeks, and the inner ring how you’ll feel once the goal is achieved.</p>
+      </div>
+      <div id="editorForm" hidden>
+        <div class="area-head"><span class="swatch" id="areaSwatch"></span><input id="areaName" aria-label="Life area name" maxlength="40"></div>
+        <label class="field" data-ring="goals"><span class="t"><b>Goals</b><small>outer ring</small></span>
+          <textarea data-ring="goals" rows="3" placeholder="One or more goals in this area"></textarea>
+          <span class="meter"><span><i></i></span><em></em></span></label>
+        <label class="field" data-ring="steps"><span class="t"><b>Next two weeks</b><small>middle ring</small></span>
+          <textarea data-ring="steps" rows="3" placeholder="Steps I can take in the next two weeks"></textarea>
+          <span class="meter"><span><i></i></span><em></em></span></label>
+        <label class="field" data-ring="feel"><span class="t"><b>How I’ll feel</b><small>inner ring</small></span>
+          <textarea data-ring="feel" rows="2" placeholder="How I feel with this goal achieved"></textarea>
+          <span class="meter"><span><i></i></span><em></em></span></label>
+        <p class="keyhint">Press Enter when you’re done. Shift+Enter starts a new line.</p>
+        <div class="row">
+          <button class="btn" id="prevArea">Previous</button>
+          <button class="btn" id="nextArea">Next</button>
+          <button class="btn primary grow" id="doneBtn">Done</button>
+        </div>
+        <button class="link" id="removeArea">Remove this area</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Life areas</h3>
+      <div class="chips" id="chips"></div>
+      <button class="btn" id="addArea">Add an area</button>
+    </section>
+
+    <section class="card">
+      <h3>Poster details</h3>
+      <label class="inp"><span>Title</span><input id="titleIn" maxlength="40"></label>
+      <label class="inp"><span>Signed</span><input id="nameIn" maxlength="40" placeholder="Your name, or leave blank to sign by hand"></label>
+      <label class="inp" style="margin-bottom:0"><span>Date</span><input id="dateIn" type="date"></label>
+    </section>
+
+    <section class="card">
+      <h3>Download</h3>
+      <div class="dl">
+        <button class="btn" id="dlDesktop">Desktop wallpaper <small>PNG, 3840 × 2160</small></button>
+        <button class="btn" id="dlPhone">Phone wallpaper <small>PNG, 1290 × 2796</small></button>
+        <div class="pdfrow">
+          <button class="btn" id="dlPdf">Printable PDF</button>
+          <select id="paperIn" aria-label="Paper size"><option value="a4">A4</option><option value="letter">Letter</option><option value="a3">A3</option></select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="collageCard">
+      <h3>AI collage</h3>
+      <p style="margin-bottom:12px">Turn your goals and feelings into an image to use as a wallpaper.</p>
+      <div class="seg small" role="group" aria-label="Collage format" style="margin-bottom:12px">
+        <button data-cformat="desktop" aria-pressed="true">Desktop</button>
+        <button data-cformat="phone" aria-pressed="false">Phone</button>
+      </div>
+      <label class="inp"><span>Style</span>
+        <select id="cStyle">
+          <option value="board">Vision board collage</option>
+          <option value="watercolour">Watercolour illustration</option>
+          <option value="photo">Dreamlike photo montage</option>
+          <option value="ethereal">Soft, glowing painting</option>
+        </select></label>
+      <label class="inp"><span class="lab"><span>Image description</span><button type="button" class="link" id="cRebuild">Rebuild from my goals</button></span>
+        <textarea id="cPrompt" rows="8"></textarea></label>
+      <label class="inp"><span>Image generator</span>
+        <select id="cEngine">
+          <option value="gpt">GPT Image 2 (best, free Puter sign-in)</option>
+          <option value="nano">Nano Banana Pro (free Puter sign-in)</option>
+          <option value="flux">Flux (instant, no sign-up)</option>
+        </select></label>
+      <button class="btn primary" id="cGo" style="width:100%">Create collage</button>
+      <div class="row" style="margin-top:8px">
+        <button class="btn grow" id="cCopy">Copy description</button>
+        <button class="btn grow" id="cChatGPT">Open in ChatGPT</button>
+      </div>
+      <p class="cstatus" id="cStatus" aria-live="polite"></p>
+      <div class="cresult" id="cResult" hidden>
+        <img id="cImg" alt="Your AI goal collage">
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary grow" id="cDownload">Download image</button>
+          <button class="btn" id="cOpen">Open full size</button>
+        </div>
+      </div>
+      <p class="note" id="cNote"></p>
+    </section>
+
+    <section class="card">
+      <h3>Keep your progress</h3>
+      <p>Your wheel is kept in this browser. To move it to another device or keep a copy for your two-week update, save it as a file.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="saveFile">Save to file</button>
+        <button class="btn" id="openFile">Open a saved file</button>
+        <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
+      </div>
+      <button class="link" id="resetAll">Start over with a blank wheel</button>
+    </section>
+  </aside>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+// ---------- constants ----------
+const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
+const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
+// radii as fractions of R (outer edge of the goals ring)
+const RINGS = {
+  feel:  {r0:.205, r1:.45, max:.064, ph:'feeling'},
+  steps: {r0:.45,  r1:.71, max:.056, ph:'next steps'},
+  goals: {r0:.71,  r1:1.0, max:.056, ph:'goals'},
+};
+const RING_ORDER = ['goals','steps','feel'];
+const LEGEND = [
+  ['goals','One or more goals in this area'],
+  ['steps','Steps I can take in the next 2 weeks'],
+  ['feel','How I feel with this goal achieved'],
+];
+const MIN_AREAS = 3, MAX_AREAS = 10;
+const STORE_KEY = 'goal-wheel.v1';
+const F = {
+  cell:  {w:500, fam:'Figtree, "Segoe UI", system-ui, sans-serif'},
+  label: {w:400, fam:'Marcellus, "Palatino Linotype", Georgia, serif'},
+  title: {w:400, fam:'Marcellus, "Palatino Linotype", Georgia, serif'},
+  ui:    {w:600, fam:'Figtree, "Segoe UI", system-ui, sans-serif'},
+  sign:  {w:600, fam:'Caveat, "Segoe Print", cursive'},
+};
+
+// ---------- colour helpers ----------
+const hex2rgb = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+const rgb2hex = a => '#' + a.map(v => Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+const mix = (a,b,t) => { const A=hex2rgb(a),B=hex2rgb(b); return rgb2hex(A.map((v,i)=>v+(B[i]-v)*t)); };
+
+const THEMES = {
+  colour: {
+    bg:'#F3F0F9', ink:'#2A2440', muted:'#7A7393',
+    fill:(hue,ring) => mix(hue,'#F3F0F9',{goals:.80,steps:.62,feel:.40}[ring]),
+    text:hue => mix(hue,'#1B1630',.80),
+    label:hue => mix(hue,'#1B1630',.38),
+    spoke:'#FFFFFF', spokeW:.016, ringLine:'rgba(255,255,255,.85)', dots:false, outline:null,
+    center:'#FFFFFF', hover:'rgba(255,255,255,.38)', select:'#2A2440',
+    legend:{goals:'#E3DEEF',steps:'#C9C0DE',feel:'#A89CC8'}, legendStroke:null,
+    accent:'#D93D73',
+  },
+  bw: {
+    bg:'#FFFFFF', ink:'#111111', muted:'#666666',
+    fill:(hue,ring) => ({goals:'#FFFFFF',steps:'#DCDCDC',feel:'#ABABAB'})[ring],
+    text:() => '#111111',
+    label:() => '#6E6E6E',
+    spoke:'#111111', spokeW:.013, ringLine:null, dots:true, outline:'#C8C8C8',
+    center:'#ABABAB', hover:'rgba(0,0,0,.06)', select:'#111111',
+    legend:{goals:'#FFFFFF',steps:'#DCDCDC',feel:'#ABABAB'}, legendStroke:'#111111',
+    accent:'#111111',
+  }
+};
+
+// ---------- state ----------
+const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+function blankState(){
+  return {
+    v:1, title:'My Goals', name:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
+    cFormat:'desktop', cStyle:'board', cEngine:'gpt', cPrompt:'', cEdited:false,
+    areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
+  };
+}
+function validState(s){
+  return s && Array.isArray(s.areas) && s.areas.length>=MIN_AREAS && s.areas.length<=MAX_AREAS &&
+    s.areas.every(a => a && typeof a.name==='string');
+}
+function normalise(s){
+  const b = blankState();
+  const out = Object.assign(b, s);
+  out.areas = s.areas.map((a,i)=>({name:String(a.name).slice(0,40), c:Number.isInteger(a.c)?a.c%PALETTE.length:i%PALETTE.length,
+    goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
+  if(!THEMES[out.theme]) out.theme='colour';
+  if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
+  return out;
+}
+let state = blankState();
+try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)) state=normalise(s); } } catch(e){}
+let saveTimer=null;
+let persist = function(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
+
+let sel = {area:null, ring:null};
+let hover = null;          // {area, ring} | {area, label:true}
+let geo = null;            // last on-screen geometry
+let fitInfo = {};          // `${i}:${ring}` -> {ratio, truncated}
+
+// ---------- measuring ----------
+const mctx = document.createElement('canvas').getContext('2d');
+const widthCache = new Map();
+function charW(font, ch){
+  const k = font.fam + font.w + ch;
+  let v = widthCache.get(k);
+  if(v===undefined){ mctx.font = `${font.w} 100px ${font.fam}`; v = mctx.measureText(ch).width; widthCache.set(k,v); }
+  return v;
+}
+const strW = (font, s, fs) => { let w=0; for(const ch of s) w+=charW(font,ch); return w*fs/100; };
+
+// ---------- curved text layout ----------
+function wrapInto(paras, caps, fs){
+  const sp = charW(F.cell,' ')*fs/100;
+  const lines=[]; let li=0;
+  for(const words of paras){
+    if(li>=caps.length) return null;
+    let cur='', curW=0;
+    for(const w of words){
+      const ww = strW(F.cell,w,fs);
+      if(!cur){ if(ww>caps[li]) return null; cur=w; curW=ww; }
+      else if(curW+sp+ww<=caps[li]){ cur+=' '+w; curW+=sp+ww; }
+      else { lines.push(cur); li++; if(li>=caps.length || ww>caps[li]) return null; cur=w; curW=ww; }
+    }
+    lines.push(cur); li++;
+  }
+  return lines;
+}
+function forceWrap(paras, caps, fs){
+  const tokens=[]; paras.forEach((p,i)=>{ if(i) tokens.push('\n'); tokens.push(...p); });
+  const sp = charW(F.cell,' ')*fs/100;
+  const lines=[]; let cur='', curW=0, truncated=false;
+  const full = () => lines.length>=caps.length;
+  const push = () => { lines.push(cur); cur=''; curW=0; };
+  for(let ti=0; ti<tokens.length; ti++){
+    let t = tokens[ti];
+    if(full()){ truncated=true; break; }
+    if(t==='\n'){ if(cur) push(); continue; }
+    let ww = strW(F.cell,t,fs);
+    if(cur && curW+sp+ww<=caps[lines.length]){ cur+=' '+t; curW+=sp+ww; continue; }
+    if(cur){ push(); if(full()){ truncated=true; break; } }
+    while(ww>caps[lines.length]){
+      let k=t.length; while(k>1 && strW(F.cell,t.slice(0,k),fs)>caps[lines.length]) k--;
+      cur=t.slice(0,k); push(); t=t.slice(k); ww=strW(F.cell,t,fs);
+      if(full()){ truncated=true; break; }
+    }
+    if(truncated) break;
+    cur=t; curW=ww;
+  }
+  if(cur && !full()) push(); else if(cur) truncated=true;
+  if(truncated && lines.length){
+    const i=lines.length-1, cap=caps[i];
+    let s=lines[i];
+    while(s.length && strW(F.cell,s+'…',fs)>cap) s=s.slice(0,-1);
+    lines[i]=s.trimEnd()+'…';
+  }
+  return {lines, truncated};
+}
+// Fit text in an annular sector. Returns {fs, lines:[{text,r}], ratio, truncated}
+function fitCell(text, ring, R, span, flip){
+  const paras = text.split(/\n+/).map(p=>p.trim().split(/\s+/).filter(Boolean)).filter(p=>p.length);
+  if(!paras.length) return null;
+  const rr = RINGS[ring], rIn=rr.r0*R, rOut=rr.r1*R, band=rOut-rIn;
+  const vpad = band*.07, hpad = R*.026;
+  const maxFs = rr.max*R, minFs = R*.018;
+  const mid=(rIn+rOut)/2;
+  const linesAt = (k, lh, shift=0) => {
+    const radii=[]; for(let j=0;j<k;j++) radii.push(mid + shift + ((k-1)/2 - j)*lh);
+    return flip ? radii.reverse() : radii;   // reading order: top of screen first
+  };
+  for(let fs=maxFs; fs>=minFs; fs*=.965){
+    const lh=fs*1.17, nMax=Math.floor((band-2*vpad+ (lh-fs))/lh);
+    for(let k=1;k<=nMax;k++){
+      const spare=Math.max(0,(band-2*vpad-((k-1)*lh+fs))/2);
+      for(const shift of [0, spare*.65]){
+        const radii=linesAt(k,lh,shift), caps=radii.map(r=>r*span-2*hpad);
+        const lines=wrapInto(paras,caps,fs);
+        if(lines) return {fs, lines:lines.map((t,i)=>({text:t,r:radii[i]})), ratio:fs/maxFs, truncated:false};
+      }
+    }
+  }
+  const fs=minFs, lh=fs*1.17, k=Math.max(1,Math.floor((band-2*vpad+(lh-fs))/lh));
+  const radii=linesAt(k,lh), caps=radii.map(r=>r*span-2*hpad);
+  const res=forceWrap(paras,caps,fs);
+  return {fs, lines:res.lines.map((t,i)=>({text:t,r:radii[i]})), ratio:fs/maxFs, truncated:res.truncated};
+}
+
+// theta: 0 = top, clockwise (radians)
+const pt = (cx,cy,r,th) => [cx + r*Math.sin(th), cy - r*Math.cos(th)];
+function drawArcText(ctx, font, text, fs, cx, cy, r, thC, flip, color, tracking=0){
+  ctx.save();
+  ctx.font = `${font.w} ${fs}px ${font.fam}`;
+  ctx.fillStyle = color; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const chars=[...text], ls=tracking*fs;
+  const ws=chars.map(c=>charW(font,c)*fs/100);
+  const L = ws.reduce((a,b)=>a+b,0) + ls*(chars.length-1);
+  const a0 = flip ? thC + L/(2*r) : thC - L/(2*r);
+  let acc=0;
+  chars.forEach((ch,i)=>{
+    const d=(acc+ws[i]/2)/r, phi = flip ? a0-d : a0+d;
+    const [x,y]=pt(cx,cy,r,phi);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(flip?phi-Math.PI:phi); ctx.fillText(ch,0,0); ctx.restore();
+    acc+=ws[i]+ls;
+  });
+  ctx.restore();
+}
+
+// ---------- shapes ----------
+function sectorPath(ctx,cx,cy,r0,r1,a0,a1){
+  ctx.beginPath();
+  ctx.arc(cx,cy,r1,a0-Math.PI/2,a1-Math.PI/2,false);
+  if(r0>0) ctx.arc(cx,cy,r0,a1-Math.PI/2,a0-Math.PI/2,true); else ctx.lineTo(cx,cy);
+  ctx.closePath();
+}
+function heartPath(ctx,cx,cy,s){
+  const x=cx, y=cy-s*.47;
+  ctx.beginPath();
+  ctx.moveTo(x, y+s*.28);
+  ctx.bezierCurveTo(x, y-s*.02, x-s*.5, y-s*.02, x-s*.5, y+s*.3);
+  ctx.bezierCurveTo(x-s*.5, y+s*.6, x-s*.08, y+s*.74, x, y+s*.94);
+  ctx.bezierCurveTo(x+s*.08, y+s*.74, x+s*.5, y+s*.6, x+s*.5, y+s*.3);
+  ctx.bezierCurveTo(x+s*.5, y-s*.02, x, y-s*.02, x, y+s*.28);
+  ctx.closePath();
+}
+function capsule(ctx,x,y,w,h){
+  const r=w/2; ctx.beginPath();
+  ctx.moveTo(x,y+r); ctx.arc(x+r,y+r,r,Math.PI,0); ctx.lineTo(x+w,y+h-r); ctx.arc(x+r,y+h-r,r,0,Math.PI); ctx.closePath();
+}
+
+// ---------- wheel ----------
+function drawWheel(ctx,cx,cy,R,T,interactive){
+  const n=state.areas.length, span=2*Math.PI/n;
+  const fits={};
+  // soft halo (colour only)
+  if(T===THEMES.colour){
+    const g=ctx.createRadialGradient(cx,cy,R*.9,cx,cy,R*1.3);
+    g.addColorStop(0,'rgba(255,255,255,.75)'); g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R*1.3,0,7); ctx.fill();
+  }
+  // cells
+  state.areas.forEach((a,i)=>{
+    const hue=PALETTE[a.c], a0=i*span, a1=a0+span;
+    RING_ORDER.forEach(ring=>{
+      const rr=RINGS[ring];
+      sectorPath(ctx,cx,cy,rr.r0*R,rr.r1*R,a0,a1);
+      ctx.fillStyle=T.fill(hue,ring); ctx.fill();
+      if(interactive && hover && hover.area===i && (hover.ring===ring)){ ctx.fillStyle=T.hover; ctx.fill(); }
+    });
+  });
+  if(T.outline){ ctx.strokeStyle=T.outline; ctx.lineWidth=R*.006; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke(); }
+  if(T.ringLine){
+    ctx.strokeStyle=T.ringLine; ctx.lineWidth=R*.007;
+    [RINGS.steps.r0, RINGS.goals.r0].forEach(f=>{ ctx.beginPath(); ctx.arc(cx,cy,f*R,0,7); ctx.stroke(); });
+  }
+  // spokes
+  ctx.strokeStyle=T.spoke; ctx.lineWidth=R*T.spokeW; ctx.lineCap='round';
+  const spokeEnd = T.dots ? 1.05 : 1.0;
+  for(let i=0;i<n;i++){
+    const th=i*span, [x0,y0]=pt(cx,cy,R*(T.dots?.15:RINGS.feel.r0),th), [x1,y1]=pt(cx,cy,R*spokeEnd,th);
+    ctx.lineCap = T.dots ? 'round' : 'butt';
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    if(T.dots){ ctx.fillStyle=T.spoke; ctx.beginPath(); ctx.arc(x1,y1,R*.024,0,7); ctx.fill(); }
+  }
+  // centre + heart
+  const rc=RINGS.feel.r0*R;
+  ctx.save();
+  if(T===THEMES.colour){ ctx.shadowColor='rgba(42,36,64,.18)'; ctx.shadowBlur=R*.05; ctx.shadowOffsetY=R*.008; }
+  ctx.fillStyle=T.center; ctx.beginPath(); ctx.arc(cx,cy,rc+(T.dots?R*.004:0),0,7); ctx.fill();
+  ctx.restore();
+  if(T.dots){ ctx.strokeStyle=T.spoke; ctx.lineWidth=R*T.spokeW; for(let i=0;i<n;i++){ const th=i*span, [x0,y0]=pt(cx,cy,R*.15,th), [x1,y1]=pt(cx,cy,rc+R*.01,th); ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); } }
+  const hs=R*.27;
+  heartPath(ctx,cx,cy,hs);
+  if(T===THEMES.colour){
+    const g=ctx.createLinearGradient(cx-hs*.4,cy-hs*.5,cx+hs*.4,cy+hs*.5);
+    g.addColorStop(0,'#FF8DB0'); g.addColorStop(1,'#D93D73');
+    ctx.fillStyle=g; ctx.fill();
+  } else {
+    ctx.fillStyle='#FFFFFF'; ctx.fill(); ctx.strokeStyle='#111'; ctx.lineWidth=R*.022; ctx.lineJoin='round'; ctx.stroke();
+  }
+  // texts
+  state.areas.forEach((a,i)=>{
+    const hue=PALETTE[a.c], thC=(i+.5)*span;
+    const flip = thC>Math.PI/2+1e-6 && thC<3*Math.PI/2-1e-6;
+    RING_ORDER.forEach(ring=>{
+      const txt=(a[ring]||'').trim();
+      if(!txt){
+        fits[i+':'+ring]=null;
+        if(interactive){
+          const rr=RINGS[ring], r=(rr.r0+rr.r1)/2*R, fs=R*.042;
+          ctx.globalAlpha=.42;
+          drawArcText(ctx,F.cell,rr.ph,fs,cx,cy,r,thC,flip,T.text(hue));
+          ctx.globalAlpha=1;
+        }
+        return;
+      }
+      const fit=fitCell(txt,ring,R,span,flip);
+      fits[i+':'+ring]={ratio:fit.ratio,truncated:fit.truncated};
+      fit.lines.forEach(l=>drawArcText(ctx,F.cell,l.text,fit.fs,cx,cy,l.r,thC,flip,T.text(hue)));
+    });
+    // label
+    const name=a.name.trim() || (interactive ? 'Name this area' : '');
+    if(name){
+      const lr = R*1.085, cap = lr*span - R*.08, track=.06;
+      let fs=R*.056;
+      const w1 = strW(F.label,name,1) + track*([...name].length-1);
+      fs = Math.max(R*.026, Math.min(fs, cap/w1));
+      if(interactive && !a.name.trim()) ctx.globalAlpha=.45;
+      drawArcText(ctx,F.label,name,fs,cx,cy,lr,thC,flip,T.label(hue),track);
+      ctx.globalAlpha=1;
+    }
+  });
+  // selection outline
+  if(interactive && sel.area!==null && sel.area<n){
+    const a0=sel.area*span, a1=a0+span, inset=R*.012;
+    ctx.save(); ctx.strokeStyle=T.select; ctx.lineWidth=R*.009; ctx.setLineDash([R*.025,R*.016]);
+    if(sel.ring){
+      const rr=RINGS[sel.ring], r0=rr.r0*R+inset, r1=rr.r1*R-inset, da=inset/((r0+r1)/2);
+      sectorPath(ctx,cx,cy,r0,r1,a0+da,a1-da);
+    } else {
+      sectorPath(ctx,cx,cy,RINGS.feel.r0*R+inset,R-inset,a0+inset/R*2,a1-inset/R*2);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  return fits;
+}
+
+// ---------- poster furniture ----------
+function fmtDate(iso, plusDays=0){
+  if(!iso) return '';
+  const [y,m,d]=iso.split('-').map(Number); if(!y) return '';
+  const dt=new Date(y,m-1,d+plusDays);
+  return dt.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+}
+function wrapPlain(font, text, fs, maxW){
+  const words=text.split(' '), lines=[]; let cur='';
+  for(const w of words){ const t=cur?cur+' '+w:w; if(cur && strW(font,t,fs)>maxW){ lines.push(cur); cur=w; } else cur=t; }
+  if(cur) lines.push(cur); return lines;
+}
+function drawLegend(ctx,T,x,y,u,maxW,rowGap,dir){
+  // draws rows downward from y; returns bottom y
+  const fs=u*1.0, sw=u*1.45, sh=u*3.4, gap=u*1.0;
+  const uiFont={w:600,fam:F.ui.fam};
+  let yy=y;
+  LEGEND.forEach(([ring,text])=>{
+    const lines=wrapPlain(uiFont,text,fs,maxW-sw-gap);
+    const blockH=Math.max(sh, lines.length*fs*1.25);
+    capsule(ctx,x,yy+(blockH-sh)/2,sw,sh);
+    ctx.fillStyle=T.legend[ring]; ctx.fill();
+    if(T.legendStroke){ ctx.strokeStyle=T.legendStroke; ctx.lineWidth=u*.28; ctx.stroke(); }
+    ctx.fillStyle=T.ink; ctx.font=`600 ${fs}px ${F.ui.fam}`; ctx.textAlign='left'; ctx.textBaseline='middle';
+    const ty=yy+blockH/2-(lines.length-1)*fs*1.25/2;
+    lines.forEach((l,k)=>ctx.fillText(l,x+sw+gap,ty+k*fs*1.25));
+    yy+=blockH+rowGap;
+  });
+  return yy-rowGap;
+}
+function drawSignBlock(ctx,T,x,y,u,w,align,interactive,rects){
+  // "Signed" label + name over a line
+  const labFs=u*.95, nameFs=u*2.9;
+  ctx.textBaseline='alphabetic';
+  ctx.fillStyle=T.muted; ctx.font=`600 ${labFs}px ${F.ui.fam}`; ctx.textAlign=align;
+  const lx = align==='left'?x:x+w;
+  ctx.fillText('Signed',lx,y+labFs);
+  const lineY=y+labFs+nameFs*1.05;
+  const nm=state.name.trim();
+  ctx.font=`${F.sign.w} ${nameFs}px ${F.sign.fam}`;
+  if(nm){ ctx.fillStyle=T.ink; ctx.fillText(nm,lx,lineY-nameFs*.18); }
+  else if(interactive){ ctx.fillStyle=T.muted; ctx.globalAlpha=.5; ctx.fillText('Your name',lx,lineY-nameFs*.18); ctx.globalAlpha=1; }
+  ctx.strokeStyle=T.ink; ctx.globalAlpha=.35; ctx.lineWidth=Math.max(1,u*.09);
+  ctx.beginPath(); ctx.moveTo(x,lineY); ctx.lineTo(x+w,lineY); ctx.stroke(); ctx.globalAlpha=1;
+  rects.name={x,y,w,h:lineY-y+u};
+}
+function drawDateBlock(ctx,T,x,y,u,w,align,interactive,rects){
+  const labFs=u*.95, valFs=u*1.55, subFs=u*.95;
+  const lx = align==='left'?x:x+w;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=T.muted; ctx.font=`600 ${labFs}px ${F.ui.fam}`;
+  ctx.fillText('Date',lx,y+labFs);
+  const lineY=y+labFs+u*2.9*1.05;
+  const d=fmtDate(state.date);
+  ctx.font=`500 ${valFs}px ${F.ui.fam}`; ctx.fillStyle=T.ink;
+  if(d) ctx.fillText(d,lx,lineY-u*.55);
+  ctx.strokeStyle=T.ink; ctx.globalAlpha=.35; ctx.lineWidth=Math.max(1,u*.09);
+  ctx.beginPath(); ctx.moveTo(x,lineY); ctx.lineTo(x+w,lineY); ctx.stroke(); ctx.globalAlpha=1;
+  ctx.font=`700 ${subFs}px ${F.ui.fam}`; ctx.fillStyle=T.accent;
+  ctx.fillText(d ? `Update on ${fmtDate(state.date,14)}` : 'Update in 2 weeks!', lx, lineY+subFs*1.9);
+  rects.date={x,y,w,h:lineY-y+subFs*2.4};
+}
+function drawTitle(ctx,T,cx,y,fs,rects){
+  const t=state.title.trim(); if(!t) { rects.title={x:cx-fs*4,y:y-fs,w:fs*8,h:fs*1.3}; return; }
+  ctx.save();
+  ctx.font=`400 ${fs}px ${F.title.fam}`; ctx.fillStyle=T.ink; ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  if('letterSpacing' in ctx) ctx.letterSpacing=(fs*.06)+'px';
+  ctx.fillText(t,cx,y);
+  const w=ctx.measureText(t).width;
+  ctx.restore();
+  rects.title={x:cx-w/2,y:y-fs,w,h:fs*1.3};
+}
+
+function drawLayout(ctx,W,H,mode,interactive){
+  const T=THEMES[state.theme], rects={};
+  ctx.fillStyle=T.bg; ctx.fillRect(0,0,W,H);
+  let cx,cy,R,u;
+  if(mode==='desktop'){
+    u=H/100; R=Math.min(H*.355, W*.235); cx=W/2; cy=H*.545;
+    drawTitle(ctx,T,cx,H*.088,u*5.6,rects);
+    const blockW=Math.min(W*.2, u*28), m=u*5;
+    drawSignBlock(ctx,T,m,u*4.6,u*1.75,blockW,'left',interactive,rects);
+    drawDateBlock(ctx,T,W-m-blockW,u*4.6,u*1.75,blockW,'right',interactive,rects);
+    const free=(W/2 - R*1.17) - m - u*1.5;
+    const lu=u*1.75, maxW=Math.max(u*16, Math.min(u*24, free));
+    // measure legend height: draw off-screen first pass by computing via dry run
+    const h=legendHeight(lu,maxW,u*1.6);
+    drawLegend(ctx,T,m,H-m-h,lu,maxW,u*1.6);
+  } else {
+    u=W/100; R=W*.40; cx=W/2; cy=H*.49;
+    drawTitle(ctx,T,cx,cy-R*1.17-u*5,u*8.6,rects);
+    const ly=cy+R*1.17+u*5;
+    const lu=u*2.45, lw=u*72;
+    const bottom=drawLegend(ctx,T,(W-lw)/2+u*3,ly,lu,lw,u*1.6);
+    const by=bottom+u*5;
+    drawSignBlock(ctx,T,u*8,by,u*2.6,u*40,'left',interactive,rects);
+    drawDateBlock(ctx,T,W-u*8-u*34,by,u*2.6,u*34,'right',interactive,rects);
+  }
+  const fits=drawWheel(ctx,cx,cy,R,T,interactive);
+  return {cx,cy,R,rects,fits,W,H};
+}
+function legendHeight(u,maxW,rowGap){
+  const fs=u, sw=u*1.45, sh=u*3.4, gap=u, uiFont={w:600,fam:F.ui.fam};
+  let h=0; LEGEND.forEach(([,t],i)=>{ const n=wrapPlain(uiFont,t,fs,maxW-sw-gap).length; h+=Math.max(sh,n*fs*1.25)+(i?rowGap:0); });
+  return h;
+}
+
+// ---------- on-screen canvas ----------
+const canvas=document.getElementById('poster'), ctx=canvas.getContext('2d'), box=document.getElementById('canvasBox');
+const SIZES={desktop:[3840,2160], phone:[1290,2796]};
+function sizeCanvas(){
+  const [w0,h0]=SIZES[state.preview], ar=w0/h0;
+  let w=box.clientWidth, h=w/ar;
+  const maxH=Math.max(440, window.innerHeight - (window.innerWidth>980?150:120));
+  if(h>maxH){ h=maxH; w=h*ar; }
+  const dpr=Math.min(Math.max(window.devicePixelRatio||1, 2), 3);
+  canvas.style.width=w+'px'; canvas.style.height=h+'px';
+  canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
+}
+function render(){
+  geo=drawLayout(ctx,canvas.width,canvas.height,state.preview,true);
+  fitInfo=geo.fits;
+  updateMeters();
+}
+let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
+
+function hitTest(ev){
+  const rect=canvas.getBoundingClientRect();
+  const x=(ev.clientX-rect.left)*canvas.width/rect.width, y=(ev.clientY-rect.top)*canvas.height/rect.height;
+  if(!geo) return null;
+  for(const k of ['name','date','title']){ const r=geo.rects[k]; if(r && x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h) return {field:k}; }
+  const dx=x-geo.cx, dy=y-geo.cy, d=Math.hypot(dx,dy)/geo.R;
+  let th=Math.atan2(dx,-dy); if(th<0) th+=2*Math.PI;
+  const n=state.areas.length, area=Math.min(n-1,Math.floor(th/(2*Math.PI/n)));
+  if(d<RINGS.feel.r0) return null;
+  for(const ring of RING_ORDER){ const rr=RINGS[ring]; if(d>=rr.r0 && d<rr.r1) return {area,ring}; }
+  if(d>=1 && d<1.17) return {area,label:true};
+  return null;
+}
+canvas.addEventListener('mousemove',ev=>{
+  const h=hitTest(ev);
+  canvas.style.cursor = h ? 'pointer' : 'default';
+  const key=h?JSON.stringify(h):null, old=hover?JSON.stringify(hover):null;
+  if(key!==old){ hover=h; schedule(); }
+});
+canvas.addEventListener('mouseleave',()=>{ if(hover){ hover=null; schedule(); } });
+canvas.addEventListener('click',ev=>{
+  const h=hitTest(ev); if(!h) return;
+  if(h.field){ ({name:nameIn,date:dateIn,title:titleIn})[h.field].focus(); return; }
+  select(h.area, h.label ? null : h.ring, true);
+});
+
+// ---------- editor ----------
+const $=s=>document.querySelector(s);
+const editorEmpty=$('#editorEmpty'), editorForm=$('#editorForm'), areaName=$('#areaName'), areaSwatch=$('#areaSwatch');
+const tas=[...document.querySelectorAll('textarea[data-ring]')];
+const titleIn=$('#titleIn'), nameIn=$('#nameIn'), dateIn=$('#dateIn'), paperIn=$('#paperIn');
+
+function select(area, ring, focus){
+  sel={area, ring};
+  if(area===null){ editorEmpty.hidden=false; editorForm.hidden=true; }
+  else {
+    editorEmpty.hidden=true; editorForm.hidden=false;
+    const a=state.areas[area];
+    areaName.value=a.name; areaSwatch.style.background=PALETTE[a.c];
+    tas.forEach(t=>{ t.value=a[t.dataset.ring]; });
+    document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===ring));
+    if(focus){
+      const target = ring ? tas.find(t=>t.dataset.ring===ring) : areaName;
+      target.focus({preventScroll:true});
+      if(ring) target.setSelectionRange(target.value.length,target.value.length); else areaName.select();
+      if(window.innerWidth<=980) $('#editor').scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  }
+  renderChips(); schedule();
+}
+tas.forEach(t=>{
+  t.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area][t.dataset.ring]=t.value; persist(); schedule(); });
+  t.addEventListener('focus',()=>{ if(sel.area!==null && sel.ring!==t.dataset.ring){ sel.ring=t.dataset.ring;
+    document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===sel.ring)); schedule(); } });
+  t.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); done(); } });
+});
+areaName.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area].name=areaName.value; persist(); renderChips(); schedule(); });
+areaName.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); tas[0].focus(); } });
+function done(){ select(null,null,false); toast('Saved'); }
+$('#doneBtn').addEventListener('click',done);
+$('#prevArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area-1+n)%n, sel.ring||'goals', true); });
+$('#nextArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area+1)%n, sel.ring||'goals', true); });
+$('#removeArea').addEventListener('click',()=>{
+  if(state.areas.length<=MIN_AREAS){ toast(`A wheel needs at least ${MIN_AREAS} areas`); return; }
+  const a=state.areas[sel.area];
+  const hasText = a.goals.trim()||a.steps.trim()||a.feel.trim();
+  if(hasText && !confirm(`Remove “${a.name||'this area'}” and everything written in it?`)) return;
+  state.areas.splice(sel.area,1); persist(); select(null,null,false);
+});
+$('#addArea').addEventListener('click',()=>{
+  if(state.areas.length>=MAX_AREAS){ toast(`The wheel holds up to ${MAX_AREAS} areas`); return; }
+  const used=new Set(state.areas.map(a=>a.c));
+  let c=0; while(used.has(c) && c<PALETTE.length-1) c++;
+  state.areas.push({name:'', c, goals:'', steps:'', feel:''});
+  persist(); select(state.areas.length-1, null, true);
+});
+function renderChips(){
+  const wrap=$('#chips'); wrap.innerHTML='';
+  state.areas.forEach((a,i)=>{
+    const b=document.createElement('button'); b.className='chip'; b.type='button';
+    b.setAttribute('aria-current', sel.area===i ? 'true':'false');
+    const s=document.createElement('span'); s.className='swatch'; s.style.background=PALETTE[a.c];
+    b.append(s, document.createTextNode(a.name.trim()||'Unnamed area'));
+    b.addEventListener('click',()=>select(i,'goals',true));
+    wrap.append(b);
+  });
+  $('#addArea').disabled = state.areas.length>=MAX_AREAS;
+}
+function updateMeters(){
+  document.querySelectorAll('.field').forEach(f=>{
+    const i=f.querySelector('.meter i'), em=f.querySelector('.meter em');
+    const info = sel.area!==null ? fitInfo[sel.area+':'+f.dataset.ring] : null;
+    if(!info){ i.style.width='0'; em.textContent=''; return; }
+    const r=info.ratio;
+    let w=Math.max(.08,Math.min(1,r)), col='var(--good)', msg='Fits comfortably';
+    if(info.truncated){ col='var(--bad)'; msg='Too long to fit, try shortening'; w=.08; }
+    else if(r<.42){ col='var(--bad)'; msg='Very small, consider shortening'; }
+    else if(r<.68){ col='var(--warn)'; msg='Getting small'; }
+    i.style.width=(w*100)+'%'; i.style.background=col; em.textContent=msg;
+  });
+}
+
+// ---------- details + toggles ----------
+function syncInputs(){
+  titleIn.value=state.title; nameIn.value=state.name; dateIn.value=state.date||''; paperIn.value=state.paper;
+  document.querySelectorAll('[data-preview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.preview===state.preview)));
+  document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===state.theme)));
+}
+titleIn.addEventListener('input',()=>{ state.title=titleIn.value; persist(); schedule(); });
+nameIn.addEventListener('input',()=>{ state.name=nameIn.value; persist(); schedule(); });
+dateIn.addEventListener('input',()=>{ state.date=dateIn.value; persist(); schedule(); });
+paperIn.addEventListener('change',()=>{ state.paper=paperIn.value; persist(); });
+document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{ state.preview=b.dataset.preview; persist(); syncInputs(); sizeCanvas(); render(); }));
+document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{ state.theme=b.dataset.theme; persist(); syncInputs(); render(); }));
+
+// ---------- exports ----------
+async function fontsReady(){
+  try{
+    await Promise.all([
+      document.fonts.load('500 40px Figtree'), document.fonts.load('600 40px Figtree'), document.fonts.load('700 40px Figtree'),
+      document.fonts.load('400 40px Marcellus'), document.fonts.load('600 40px Caveat')
+    ]);
+    await document.fonts.ready;
+  }catch(e){}
+}
+function renderOff(W,H,mode){
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  drawLayout(c.getContext('2d'),W,H,mode,false); return c;
+}
+function slug(){ return (state.title.trim()||'my-goals').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'my-goals'; }
+function download(blob,name){
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=name; document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+async function exportPNG(mode){
+  await fontsReady();
+  const [W,H]=SIZES[mode], c=renderOff(W,H,mode);
+  c.toBlob(b=>{ download(b,`${slug()}-${mode}.png`); toast(mode==='desktop'?'Downloaded desktop wallpaper':'Downloaded phone wallpaper'); },'image/png');
+}
+async function exportPDF(){
+  if(!window.jspdf){ toast('The PDF tool didn’t load. Check your connection and reload the page.'); return; }
+  await fontsReady();
+  const sizes={a4:[297,210], letter:[279.4,215.9], a3:[420,297]};
+  const [mmW,mmH]=sizes[state.paper]||sizes.a4;
+  const dpi=state.paper==='a3'?220:300;
+  const W=Math.round(mmW/25.4*dpi), H=Math.round(mmH/25.4*dpi);
+  const c=renderOff(W,H,'desktop');
+  const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:[mmW,mmH]});
+  pdf.addImage(c.toDataURL('image/jpeg',.95),'JPEG',0,0,mmW,mmH,undefined,'FAST');
+  pdf.save(`${slug()}.pdf`);
+  toast('Downloaded printable PDF');
+}
+$('#dlDesktop').addEventListener('click',()=>exportPNG('desktop'));
+$('#dlPhone').addEventListener('click',()=>exportPNG('phone'));
+$('#dlPdf').addEventListener('click',exportPDF);
+
+// ---------- save / open / reset ----------
+$('#saveFile').addEventListener('click',()=>{
+  download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), `${slug()}.json`); toast('Saved to file');
+});
+const fileIn=$('#fileIn');
+$('#openFile').addEventListener('click',()=>fileIn.click());
+fileIn.addEventListener('change',async()=>{
+  const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
+  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); persist(); syncInputs(); syncCollageUI(); select(null,null,false); sizeCanvas(); render(); toast('Opened your saved wheel'); }
+  catch(e){ toast('That file isn’t a saved goal wheel'); }
+});
+$('#resetAll').addEventListener('click',()=>{
+  if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
+  state=blankState(); persist(); syncInputs(); syncCollageUI(); select(null,null,false); sizeCanvas(); render();
+});
+
+let toastT=0;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+
+// ---------- AI collage ----------
+const STYLES = {
+  board: 'a tactile, mixed-media vision board: layered photographs, torn paper edges, pressed flowers and botanical details, soft film grain, arranged with an artful, curated, editorial feel',
+  watercolour: 'luminous watercolour and gouache illustration with soft bleeding edges, delicate ink linework, gentle gradients and visible paper texture',
+  photo: 'a seamless photographic montage with cinematic natural light and shallow depth of field, each scene blending softly into the next like a dream',
+  ethereal: 'ethereal, painterly digital art with soft glowing light, gentle mist, iridescent highlights and a serene, uplifting atmosphere',
+};
+const ENGINE_NOTES = {
+  gpt: 'The first time, Puter asks you to sign in or create a free account in a pop-up. Images use your own Puter allowance, so this site stays free. High-quality images take up to a minute.',
+  nano: 'The first time, Puter asks you to sign in or create a free account in a pop-up. Images use your own Puter allowance, so this site stays free.',
+  flux: 'No account needed. Quality is lower than the other options, it may add a small watermark, and you can create one image about every 15 seconds.',
+};
+const cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'), cResult=$('#cResult'), cImg=$('#cImg'), cGo=$('#cGo');
+const clean = t => t.replace(/\s*\n+\s*/g,'; ').replace(/\s+/g,' ').trim().replace(/[;.,\s]+$/,'');
+function buildPrompt(){
+  const parts = state.areas.map(a=>{
+    const g=clean(a.goals), f=clean(a.feel), st=clean(a.steps);
+    if(!g && !f && !st) return null;
+    const name=a.name.trim()||'Another part of life';
+    let line=`${name}: ${g || st}.`;
+    if(f) line+=` Feeling: ${f}.`;
+    return line;
+  }).filter(Boolean);
+  if(!parts.length) return '';
+  const fmt = state.cFormat==='desktop'
+    ? 'a wide 16:9 landscape desktop wallpaper'
+    : 'a tall 9:19.5 portrait phone wallpaper';
+  const phoneNote = state.cFormat==='phone'
+    ? ' Keep the top fifth of the image calm and simple so a lock-screen clock stays readable.' : '';
+  return `A beautiful, high-end goal collage celebrating a joyful, balanced and fulfilled life, composed as one cohesive artwork for ${fmt}. `+
+    `At the centre, a softly glowing heart radiates warm light that gently connects every scene. Around it, harmonious vignettes flow into one another, each showing one area of life as already achieved and deeply felt:\n\n`+
+    parts.join('\n')+
+    `\n\nStyle: ${STYLES[state.cStyle]}. A rich but harmonious colour palette, cohesive lighting across all scenes, depth and texture, elegant breathing space, uplifting and heartfelt, highly detailed, premium quality.${phoneNote} `+
+    `No text, no words, no letters, no numbers, no logos and no watermarks anywhere in the image.`;
+}
+function syncPrompt(force){
+  if(force || !state.cEdited){ state.cPrompt=buildPrompt(); state.cEdited=false; }
+  if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt;
+  cPrompt.placeholder='Write some goals on the wheel and a description appears here.';
+}
+function syncCollageUI(){
+  cStyle.value=state.cStyle; cEngine.value=state.cEngine;
+  document.querySelectorAll('[data-cformat]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cformat===state.cFormat)));
+  $('#cNote').textContent=ENGINE_NOTES[state.cEngine];
+  syncPrompt(false);
+}
+cPrompt.addEventListener('input',()=>{ state.cPrompt=cPrompt.value; state.cEdited=true; persist(); });
+$('#cRebuild').addEventListener('click',()=>{ syncPrompt(true); cPrompt.value=state.cPrompt; persist(); toast('Description rebuilt from your goals'); });
+cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; if(state.cEdited){ toast('Style changed. Use “Rebuild from my goals” to apply it to your edited description.'); } syncPrompt(false); persist(); });
+cEngine.addEventListener('change',()=>{ state.cEngine=cEngine.value; syncCollageUI(); persist(); });
+document.querySelectorAll('[data-cformat]').forEach(b=>b.addEventListener('click',()=>{ state.cFormat=b.dataset.cformat; syncCollageUI(); persist(); }));
+
+function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
+let lastImage=null, fluxReadyAt=0, busy=false;
+function showResult(src){
+  lastImage={src, format:state.cFormat};
+  cImg.src=src; cResult.hidden=false;
+  cImg.style.aspectRatio = state.cFormat==='desktop' ? '16/9' : '9/19.5';
+  cImg.style.objectFit='cover';
+  if(state.cFormat==='phone'){ cImg.style.maxHeight='520px'; cImg.style.width='auto'; cImg.style.margin='0 auto'; } else { cImg.style.maxHeight=''; cImg.style.width='100%'; cImg.style.margin=''; }
+}
+function promptOrWarn(){
+  const p=(cPrompt.value||'').trim();
+  if(!p){ setStatus('Write at least one goal on the wheel first, or type your own description.',true); return null; }
+  return p;
+}
+async function genPuter(prompt){
+  if(!window.puter) throw {code:'no_puter'};
+  if(!puter.auth.isSignedIn()) await puter.auth.signIn();
+  const ratio = state.cFormat==='desktop' ? {w:16,h:9} : {w:9,h:19.5};
+  const opts = state.cEngine==='gpt'
+    ? {model:'gpt-image-2', quality:'high', ratio}
+    : {model:'gemini-3-pro-image', quality:'2K', ratio};
+  const img = await puter.ai.txt2img(prompt, opts);
+  return img.src;
+}
+function genFlux(prompt){
+  const [w,h] = state.cFormat==='desktop' ? [1920,1080] : [1080,2340];
+  const short = prompt.length>1600 ? prompt.slice(0,1600) : prompt;
+  const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(short)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
+  return new Promise((res,rej)=>{
+    const im=new Image();
+    im.onload=()=>res(url); im.onerror=()=>rej({code:'flux_failed'});
+    im.src=url;
+  });
+}
+cGo.addEventListener('click',async()=>{
+  if(busy) return;
+  const prompt=promptOrWarn(); if(!prompt) return;
+  if(state.cEngine==='flux' && Date.now()<fluxReadyAt){
+    setStatus(`Flux allows one image about every 15 seconds. Try again in ${Math.ceil((fluxReadyAt-Date.now())/1000)} seconds.`,true); return;
+  }
+  busy=true; cGo.disabled=true; cGo.textContent='Creating…';
+  setStatus(state.cEngine==='flux' ? 'Creating your collage. This usually takes 10 to 30 seconds.' : 'Creating your collage. This can take up to a minute.');
+  try{
+    const src = state.cEngine==='flux' ? await genFlux(prompt) : await genPuter(prompt);
+    if(state.cEngine==='flux') fluxReadyAt=Date.now()+15000;
+    showResult(src); setStatus('Your collage is ready.');
+  }catch(e){
+    const code = e && (e.errorCode || e.code || (e.error && e.error.code));
+    let msg;
+    if(code==='no_puter') msg='The Puter service didn’t load. Check your connection and reload the page, or choose Flux.';
+    else if(code==='insufficient_funds') msg='Your free Puter allowance has run out for now. Choose Flux, or use “Open in ChatGPT”.';
+    else if(code==='moderation_flagged') msg='The image service declined this description. Try rewording it.';
+    else if(code==='flux_failed') msg='Flux couldn’t create the image just now. Wait a moment and try again, or choose another generator.';
+    else if(e && /sign|auth|popup|cancel/i.test(String(e.message||e))) msg='Sign-in was cancelled. Create collage again to sign in, or choose Flux.';
+    else msg='The image couldn’t be created. '+((e && e.message) ? e.message : 'Try again in a moment.');
+    setStatus(msg,true);
+  }finally{ busy=false; cGo.disabled=false; cGo.textContent='Create collage'; }
+});
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.append(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(_){} ta.remove(); return ok; }
+}
+$('#cCopy').addEventListener('click',async()=>{ const p=promptOrWarn(); if(!p) return; toast(await copyText(p)?'Description copied':'Select the description and copy it manually'); });
+$('#cChatGPT').addEventListener('click',async()=>{
+  const p=promptOrWarn(); if(!p) return;
+  const full='Please create this image. '+p;
+  await copyText(full);
+  window.open('https://chatgpt.com/?q='+encodeURIComponent(full),'_blank','noopener');
+  setStatus('Opened ChatGPT with your description. It’s also copied, in case you need to paste it.');
+});
+$('#cDownload').addEventListener('click',async()=>{
+  if(!lastImage) return;
+  const name=`${slug()}-collage-${lastImage.format}`;
+  try{
+    const r=await fetch(lastImage.src); if(!r.ok) throw 0;
+    const b=await r.blob(); const ext=(b.type.split('/')[1]||'png').replace('jpeg','jpg');
+    download(b,`${name}.${ext}`); toast('Downloaded your collage');
+  }catch(e){ window.open(lastImage.src,'_blank','noopener'); toast('Opened full size. Right-click or long-press to save it.'); }
+});
+$('#cOpen').addEventListener('click',()=>{ if(lastImage) window.open(lastImage.src,'_blank','noopener'); });
+// keep the auto description in step with the wheel
+const _persist=persist;
+persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
+
+// ---------- boot ----------
+syncInputs(); syncCollageUI(); renderChips(); sizeCanvas(); render();
+window.addEventListener('resize',()=>{ sizeCanvas(); render(); });
+if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
+window.__goalWheel={get state(){return state}, set(s){state=normalise(s); syncInputs(); syncCollageUI(); renderChips(); sizeCanvas(); render();}, renderOff, select};
+})();
+</script>
+</body>
+</html>
