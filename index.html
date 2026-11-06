@@ -15,10 +15,10 @@
   --bg:#EEEBF5; --panel:#FFFFFF; --ink:#2A2440; --muted:#6E6888; --line:#DDD8EA;
   --field:#F7F5FB; --rose:#D93D73; --rose-ink:#FFFFFF; --focus:#5E6AD2;
   --good:#3FAE73; --warn:#E69A2E; --bad:#D93D73;
+  --shadow:0 2px 6px rgba(42,36,64,.08),0 18px 48px -16px rgba(42,36,64,.35);
   --sans:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
   --display:"Marcellus", "Palatino Linotype", Palatino, Georgia, serif;
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -28,177 +28,206 @@
   }
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--sans);-webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+[hidden]{display:none!important}
 
-.top{max-width:1440px;margin:0 auto;padding:28px 28px 8px;display:flex;align-items:baseline;gap:20px;flex-wrap:wrap}
-.top h1{font:400 34px/1.1 var(--display);margin:0;letter-spacing:.02em}
-.top p{margin:0;color:var(--muted);max-width:60ch}
-
-.wrap{max-width:1440px;margin:0 auto;padding:12px 28px 40px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
-@media (max-width:980px){.wrap{grid-template-columns:1fr;padding:12px 14px 32px}.top{padding:20px 14px 4px}}
-
-.stage{position:sticky;top:12px;display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
-@media (max-width:980px){.stage{position:static}}
-.tools{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:3px}
-.seg button{border:0;background:none;padding:6px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted)}
+/* top bar */
+.bar{flex:none;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.brand{font:400 22px/1 var(--display);letter-spacing:.02em;margin-right:4px;white-space:nowrap}
+.group{display:flex;align-items:center;gap:8px}
+.glabel{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+.seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;padding:5px 13px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.canvas-box{width:100%;display:flex;justify-content:center}
-canvas#poster{display:block;border-radius:6px;box-shadow:0 1px 2px rgba(42,36,64,.08),0 12px 40px -12px rgba(42,36,64,.28);touch-action:manipulation}
-.stage .hint{margin:0;color:var(--muted);font-size:14px;text-align:center}
-
-.panel{display:flex;flex-direction:column;gap:14px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
-.card h2{font:400 22px/1.2 var(--display);margin:0 0 6px}
-.card h3{font-size:15px;font-weight:700;margin:0 0 10px}
-.card p{margin:0;color:var(--muted);font-size:14px}
-
-.area-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.swatch{width:16px;height:16px;border-radius:50%;flex:none}
-#areaName{flex:1;min-width:0;border:0;border-bottom:1.5px solid var(--line);background:none;font:400 22px/1.2 var(--display);padding:2px 0 4px;border-radius:0}
-#areaName:focus{outline:none;border-bottom-color:var(--focus)}
-
-.field{display:block;margin-bottom:12px;border-radius:12px;padding:10px 10px 8px;border:1.5px solid transparent;background:var(--field);transition:border-color .15s}
-.field.active{border-color:var(--focus)}
-.field .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.field b{font-size:14px}
-.field small{color:var(--muted);font-size:12.5px}
-.field textarea{display:block;width:100%;margin-top:6px;border:0;background:none;resize:vertical;min-height:58px;font-size:15px;line-height:1.45;padding:0}
-.field textarea:focus{outline:none}
-.meter{display:flex;align-items:center;gap:8px;margin-top:4px;height:16px}
-.meter span{flex:none;width:56px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
-.meter span i{display:block;height:100%;width:0;border-radius:2px;background:var(--good);transition:width .2s}
-.meter em{font-style:normal;font-size:12px;color:var(--muted)}
-.keyhint{font-size:12.5px!important;margin:-2px 0 12px!important}
-
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer}
+.spacer{flex:1}
+.actions{display:flex;gap:8px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 14px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--muted)}
 .btn.primary{background:var(--rose);border-color:var(--rose);color:var(--rose-ink)}
 .btn.primary:hover{filter:brightness(1.06)}
+.btn.icon{padding:7px 11px;font-size:16px;line-height:1}
+.btn:disabled{opacity:.55;cursor:default}
 .btn.grow{flex:1}
-.link{border:0;background:none;padding:0;margin-top:10px;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer}
-.link:hover{color:var(--bad)}
+.link{border:0;background:none;padding:0;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer}
+.link:hover{color:var(--ink)}
+.link.danger:hover{color:var(--bad)}
 
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.chip{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px 5px 8px;font-size:13.5px;font-weight:500;cursor:pointer}
-.chip[aria-current="true"]{border-color:var(--ink)}
-.chip .swatch{width:11px;height:11px}
+/* menus */
+.menuwrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);min-width:250px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:30}
+.menu button{display:flex;justify-content:space-between;gap:14px;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500}
+.menu button:hover,.menu button:focus-visible{background:var(--field)}
+.menu small{color:var(--muted);font-size:12px}
+.menu hr{border:0;border-top:1px solid var(--line);margin:5px 4px}
 
+/* workspace */
+.app{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px}
+.stage{flex:1;min-width:0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+canvas#poster{display:block;border-radius:6px;box-shadow:var(--shadow);touch-action:manipulation}
+.hint{position:absolute;left:0;right:0;bottom:-2px;margin:0;text-align:center;font-size:12.5px;color:var(--muted);pointer-events:none}
+
+/* area editor */
+.editor{flex:none;width:340px;align-self:center;max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.area-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.swatch{width:14px;height:14px;border-radius:50%;flex:none}
+#areaName{flex:1;min-width:0;border:0;border-bottom:1.5px solid var(--line);background:none;font:400 20px/1.2 var(--display);padding:2px 0 4px;border-radius:0}
+#areaName:focus{outline:none;border-bottom-color:var(--focus)}
+.x{border:0;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:8px}
+.x:hover{background:var(--field);color:var(--ink)}
+.field{display:block;margin-bottom:8px;border-radius:11px;padding:8px 10px 6px;border:1.5px solid transparent;background:var(--field)}
+.field.active{border-color:var(--focus)}
+.field .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.field b{font-size:13.5px}
+.field small{color:var(--muted);font-size:12px}
+.field textarea{display:block;width:100%;margin-top:4px;border:0;background:none;resize:none;font-size:14.5px;line-height:1.4;padding:0}
+.field textarea:focus{outline:none}
+.meter{display:flex;align-items:center;gap:8px;margin-top:3px;height:14px}
+.meter span{flex:none;width:48px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.meter span i{display:block;height:100%;width:0;border-radius:2px;background:var(--good);transition:width .2s}
+.meter em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.keyhint{font-size:12px;color:var(--muted);margin:2px 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.edfoot{display:flex;justify-content:space-between;margin-top:10px}
+
+/* small field popover (title, name, date) */
+.pop{position:fixed;z-index:40;width:270px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px}
+.pop span{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.pop input{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:9px;padding:7px 9px;font-size:15px}
+.pop input:focus{outline:none;border-color:var(--focus)}
+.pop .row{margin-top:10px;justify-content:flex-end}
+
+/* collage dialog */
+dialog{border:0;padding:0;border-radius:18px;background:var(--panel);color:var(--ink);box-shadow:var(--shadow);width:min(900px,94vw);max-height:92dvh}
+dialog::backdrop{background:rgba(23,20,31,.45)}
+.dlg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:18px;max-height:92dvh;overflow:auto}
+.dlg h2{font:400 22px/1.2 var(--display);margin:0}
+.dlghead{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .inp{display:block;margin-bottom:10px}
-.inp span{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
-.inp input,.inp select{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:8px 10px;font-size:15px}
-.inp input:focus,.inp select:focus{outline:none;border-color:var(--focus)}
+.inp>span{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;margin-bottom:4px}
+.inp select,.inp textarea{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:7px 9px;font-size:14px}
+.inp textarea{line-height:1.45;resize:vertical}
+.inp select:focus,.inp textarea:focus{outline:none;border-color:var(--focus)}
+.cstatus{font-size:13px;margin:8px 0 0;min-height:1em;color:var(--muted)}
+.cstatus.err{color:var(--bad)}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.preview{display:flex;flex-direction:column;gap:10px;min-height:0}
+.frame{flex:1;min-height:260px;border-radius:12px;background:var(--field);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:13.5px;text-align:center;padding:12px}
+.frame img{max-width:100%;max-height:62dvh;border-radius:8px;display:block}
+.frame.has{border-style:solid;padding:6px}
 
-.dl{display:grid;gap:8px}
-.dl button{display:flex;justify-content:space-between;align-items:center;text-align:left;gap:10px}
-.dl button small{font-weight:500;color:var(--muted);font-size:12px}
-.dl .btn.primary small{color:rgba(255,255,255,.82)}
-.pdfrow{display:flex;gap:8px}
-.pdfrow .btn{flex:1}
-.pdfrow select{width:auto;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:0 8px;font-size:14px}
-
-.inp textarea{width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.45;resize:vertical}
-.inp textarea:focus{outline:none;border-color:var(--focus)}
-.inp .lab{display:flex;justify-content:space-between;align-items:baseline}
-.inp .lab .link{margin:0}
-.seg.small button{padding:5px 12px;font-size:13px}
-.cresult{margin-top:12px}
-.cresult img{display:block;width:100%;border-radius:10px;background:var(--field)}
-.cstatus{font-size:13px!important;margin-top:10px!important;min-height:1em}
-.cstatus.err{color:var(--bad)!important}
-.note{font-size:12.5px!important;margin-top:10px!important}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;font-weight:500;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:860px){
+  .bar{padding:8px 10px;gap:8px}
+  .brand{font-size:19px}
+  .glabel{display:none}
+  .app{padding:10px}
+  .editor{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;max-height:58dvh;z-index:20}
+  .dlg{grid-template-columns:1fr}
+  .frame{min-height:180px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 
-<header class="top">
-  <h1>Goal Wheel</h1>
-  <p>Write your goals around the heart, then download your wheel for your desktop, your phone, or your wall.</p>
-</header>
-
-<main class="wrap">
-  <section class="stage" aria-label="Poster preview">
-    <div class="tools">
-      <div class="seg" role="group" aria-label="Preview layout">
-        <button data-preview="desktop" aria-pressed="true">Desktop</button>
-        <button data-preview="phone" aria-pressed="false">Phone</button>
-      </div>
-      <div class="seg" role="group" aria-label="Colour style">
-        <button data-theme="colour" aria-pressed="true">Colour</button>
-        <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
+<header class="bar">
+  <div class="brand">Goal Wheel</div>
+  <div class="group"><span class="glabel">Output format</span>
+    <div class="seg" role="group" aria-label="Output format">
+      <button data-preview="desktop" aria-pressed="true">Desktop</button>
+      <button data-preview="phone" aria-pressed="false">Phone</button>
+    </div></div>
+  <div class="group"><span class="glabel">Colours</span>
+    <div class="seg" role="group" aria-label="Colours">
+      <button data-theme="colour" aria-pressed="true">Colour</button>
+      <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
+    </div></div>
+  <div class="spacer"></div>
+  <div class="actions">
+    <div class="menuwrap">
+      <button class="btn" id="dlBtn" aria-haspopup="true" aria-expanded="false">Download</button>
+      <div class="menu" id="dlMenu" hidden>
+        <button data-dl="desktop">Desktop wallpaper <small>PNG</small></button>
+        <button data-dl="phone">Phone wallpaper <small>PNG</small></button>
+        <hr>
+        <button data-dl="pdf-a4">Printable PDF <small>A4</small></button>
+        <button data-dl="pdf-letter">Printable PDF <small>US Letter</small></button>
+        <button data-dl="pdf-a3">Printable PDF <small>A3</small></button>
       </div>
     </div>
-    <div class="canvas-box" id="canvasBox"><canvas id="poster" role="img" aria-label="Your goal wheel"></canvas></div>
-    <p class="hint">Click any part of the wheel to write in it. Click an area’s name to rename it.</p>
-  </section>
-
-  <aside class="panel">
-    <section class="card" id="editor" aria-live="polite">
-      <div id="editorEmpty">
-        <h2>Start with any life area</h2>
-        <p>Click a segment of the wheel. The outer ring holds your goals, the middle ring the steps you’ll take in the next two weeks, and the inner ring how you’ll feel once the goal is achieved.</p>
+    <button class="btn primary" id="collageBtn">AI collage</button>
+    <div class="menuwrap">
+      <button class="btn icon" id="moreBtn" aria-label="More options" aria-haspopup="true" aria-expanded="false">⋯</button>
+      <div class="menu" id="moreMenu" hidden>
+        <button id="addArea">Add a life area</button>
+        <hr>
+        <button id="saveFile">Save to file</button>
+        <button id="openFile">Open a saved file</button>
+        <hr>
+        <button id="resetAll">Start over with a blank wheel</button>
       </div>
-      <div id="editorForm" hidden>
-        <div class="area-head"><span class="swatch" id="areaSwatch"></span><input id="areaName" aria-label="Life area name" maxlength="40"></div>
-        <label class="field" data-ring="goals"><span class="t"><b>Goals</b><small>outer ring</small></span>
-          <textarea data-ring="goals" rows="3" placeholder="One or more goals in this area"></textarea>
-          <span class="meter"><span><i></i></span><em></em></span></label>
-        <label class="field" data-ring="steps"><span class="t"><b>Next two weeks</b><small>middle ring</small></span>
-          <textarea data-ring="steps" rows="3" placeholder="Steps I can take in the next two weeks"></textarea>
-          <span class="meter"><span><i></i></span><em></em></span></label>
-        <label class="field" data-ring="feel"><span class="t"><b>How I’ll feel</b><small>inner ring</small></span>
-          <textarea data-ring="feel" rows="2" placeholder="How I feel with this goal achieved"></textarea>
-          <span class="meter"><span><i></i></span><em></em></span></label>
-        <p class="keyhint">Press Enter when you’re done. Shift+Enter starts a new line.</p>
-        <div class="row">
-          <button class="btn" id="prevArea">Previous</button>
-          <button class="btn" id="nextArea">Next</button>
-          <button class="btn primary grow" id="doneBtn">Done</button>
+    </div>
+  </div>
+  <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
+</header>
+
+<main class="app">
+  <div class="stage" id="stage">
+    <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
+    <p class="hint" id="hint">Click any part of the wheel, the title, your name or the date to edit it.</p>
+  </div>
+
+  <aside class="editor" id="editor" hidden aria-label="Edit life area">
+    <div class="area-head">
+      <span class="swatch" id="areaSwatch"></span>
+      <input id="areaName" aria-label="Life area name" maxlength="40">
+      <button class="x" id="closeEd" aria-label="Close">×</button>
+    </div>
+    <label class="field" data-ring="goals"><span class="t"><b>Goals</b><small>outer ring</small></span>
+      <textarea data-ring="goals" rows="2" placeholder="One or more goals in this area"></textarea>
+      <span class="meter"><span><i></i></span><em></em></span></label>
+    <label class="field" data-ring="steps"><span class="t"><b>Next two weeks</b><small>middle ring</small></span>
+      <textarea data-ring="steps" rows="2" placeholder="Steps I can take in the next two weeks"></textarea>
+      <span class="meter"><span><i></i></span><em></em></span></label>
+    <label class="field" data-ring="feel"><span class="t"><b>How I’ll feel</b><small>inner ring</small></span>
+      <textarea data-ring="feel" rows="2" placeholder="How I feel with this goal achieved"></textarea>
+      <span class="meter"><span><i></i></span><em></em></span></label>
+    <p class="keyhint">Press Enter to move on. Shift+Enter starts a new line.</p>
+    <div class="row">
+      <button class="btn" id="prevArea">Previous</button>
+      <button class="btn" id="nextArea">Next area</button>
+      <button class="btn primary grow" id="doneBtn">Done</button>
+    </div>
+    <div class="edfoot"><button class="link danger" id="removeArea">Remove this area</button></div>
+  </aside>
+</main>
+
+<div class="pop" id="fieldPop" hidden role="dialog" aria-label="Edit poster detail">
+  <label><span id="fpLabel">Title</span><input id="fpInput"></label>
+  <div class="row"><button class="btn primary" id="fpDone">Done</button></div>
+</div>
+
+<dialog id="collageDlg" aria-label="AI collage">
+  <div class="dlg">
+    <div class="dlghead">
+      <h2>AI collage</h2>
+      <div class="row">
+        <div class="seg" role="group" aria-label="Output format">
+          <button data-preview="desktop" aria-pressed="true">Desktop</button>
+          <button data-preview="phone" aria-pressed="false">Phone</button>
         </div>
-        <button class="link" id="removeArea">Remove this area</button>
+        <button class="x" id="closeDlg" aria-label="Close">×</button>
       </div>
-    </section>
-
-    <section class="card">
-      <h3>Life areas</h3>
-      <div class="chips" id="chips"></div>
-      <button class="btn" id="addArea">Add an area</button>
-    </section>
-
-    <section class="card">
-      <h3>Poster details</h3>
-      <label class="inp"><span>Title</span><input id="titleIn" maxlength="40"></label>
-      <label class="inp"><span>Signed</span><input id="nameIn" maxlength="40" placeholder="Your name, or leave blank to sign by hand"></label>
-      <label class="inp" style="margin-bottom:0"><span>Date</span><input id="dateIn" type="date"></label>
-    </section>
-
-    <section class="card">
-      <h3>Download</h3>
-      <div class="dl">
-        <button class="btn" id="dlDesktop">Desktop wallpaper <small>PNG, 3840 × 2160</small></button>
-        <button class="btn" id="dlPhone">Phone wallpaper <small>PNG, 1290 × 2796</small></button>
-        <div class="pdfrow">
-          <button class="btn" id="dlPdf">Printable PDF</button>
-          <select id="paperIn" aria-label="Paper size"><option value="a4">A4</option><option value="letter">Letter</option><option value="a3">A3</option></select>
-        </div>
-      </div>
-    </section>
-
-    <section class="card" id="collageCard">
-      <h3>AI collage</h3>
-      <p style="margin-bottom:12px">Turn your goals and feelings into an image to use as a wallpaper.</p>
-      <div class="seg small" role="group" aria-label="Collage format" style="margin-bottom:12px">
-        <button data-cformat="desktop" aria-pressed="true">Desktop</button>
-        <button data-cformat="phone" aria-pressed="false">Phone</button>
-      </div>
+    </div>
+    <div>
       <label class="inp"><span>Style</span>
         <select id="cStyle">
           <option value="board">Vision board collage</option>
@@ -206,8 +235,8 @@ canvas#poster{display:block;border-radius:6px;box-shadow:0 1px 2px rgba(42,36,64
           <option value="photo">Dreamlike photo montage</option>
           <option value="ethereal">Soft, glowing painting</option>
         </select></label>
-      <label class="inp"><span class="lab"><span>Image description</span><button type="button" class="link" id="cRebuild">Rebuild from my goals</button></span>
-        <textarea id="cPrompt" rows="8"></textarea></label>
+      <label class="inp"><span>Image description <button type="button" class="link" id="cRebuild">Rebuild from my goals</button></span>
+        <textarea id="cPrompt" rows="9"></textarea></label>
       <label class="inp"><span>Image generator</span>
         <select id="cEngine">
           <option value="gpt">GPT Image 2 (best, free Puter sign-in)</option>
@@ -220,28 +249,18 @@ canvas#poster{display:block;border-radius:6px;box-shadow:0 1px 2px rgba(42,36,64
         <button class="btn grow" id="cChatGPT">Open in ChatGPT</button>
       </div>
       <p class="cstatus" id="cStatus" aria-live="polite"></p>
-      <div class="cresult" id="cResult" hidden>
-        <img id="cImg" alt="Your AI goal collage">
-        <div class="row" style="margin-top:8px">
-          <button class="btn primary grow" id="cDownload">Download image</button>
-          <button class="btn" id="cOpen">Open full size</button>
-        </div>
-      </div>
       <p class="note" id="cNote"></p>
-    </section>
-
-    <section class="card">
-      <h3>Keep your progress</h3>
-      <p>Your wheel is kept in this browser. To move it to another device or keep a copy for your two-week update, save it as a file.</p>
-      <div class="row" style="margin-top:12px">
-        <button class="btn" id="saveFile">Save to file</button>
-        <button class="btn" id="openFile">Open a saved file</button>
-        <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
+    </div>
+    <div class="preview">
+      <div class="frame" id="cFrame">Your collage appears here.</div>
+      <div class="row" id="cActions" hidden>
+        <button class="btn primary grow" id="cDownload">Download image</button>
+        <button class="btn" id="cOpen">Open full size</button>
       </div>
-      <button class="link" id="resetAll">Start over with a blank wheel</button>
-    </section>
-  </aside>
-</main>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -284,7 +303,7 @@ const THEMES = {
     label:hue => mix(hue,'#1B1630',.38),
     spoke:'#FFFFFF', spokeW:.016, ringLine:'rgba(255,255,255,.85)', dots:false, outline:null,
     center:'#FFFFFF', hover:'rgba(255,255,255,.38)', select:'#2A2440',
-    legend:{goals:'#E3DEEF',steps:'#C9C0DE',feel:'#A89CC8'}, legendStroke:null,
+    legend:{goals:'#FFFFFF',steps:'#DCDCDC',feel:'#ABABAB'}, legendStroke:'#2A2440',
     accent:'#D93D73',
   },
   bw: {
@@ -304,7 +323,7 @@ const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTi
 function blankState(){
   return {
     v:1, title:'My Goals', name:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
-    cFormat:'desktop', cStyle:'board', cEngine:'gpt', cPrompt:'', cEdited:false,
+    cStyle:'board', cEngine:'gpt', cPrompt:'', cEdited:false,
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
 }
@@ -579,7 +598,7 @@ function drawLegend(ctx,T,x,y,u,maxW,rowGap,dir){
     const blockH=Math.max(sh, lines.length*fs*1.25);
     capsule(ctx,x,yy+(blockH-sh)/2,sw,sh);
     ctx.fillStyle=T.legend[ring]; ctx.fill();
-    if(T.legendStroke){ ctx.strokeStyle=T.legendStroke; ctx.lineWidth=u*.28; ctx.stroke(); }
+    if(T.legendStroke){ ctx.strokeStyle=T.legendStroke; ctx.lineWidth=u*.2; ctx.stroke(); }
     ctx.fillStyle=T.ink; ctx.font=`600 ${fs}px ${F.ui.fam}`; ctx.textAlign='left'; ctx.textBaseline='middle';
     const ty=yy+blockH/2-(lines.length-1)*fs*1.25/2;
     lines.forEach((l,k)=>ctx.fillText(l,x+sw+gap,ty+k*fs*1.25));
@@ -635,16 +654,16 @@ function drawLayout(ctx,W,H,mode,interactive){
   ctx.fillStyle=T.bg; ctx.fillRect(0,0,W,H);
   let cx,cy,R,u;
   if(mode==='desktop'){
-    u=H/100; R=Math.min(H*.355, W*.235); cx=W/2; cy=H*.545;
+    u=H/100; const cw=Math.min(W, H*297/210), x0=(W-cw)/2;   // keep everything inside an A4-shaped box
+    R=Math.min(H*.36, cw*.25); cx=W/2; cy=H*.545;
     drawTitle(ctx,T,cx,H*.088,u*5.6,rects);
-    const blockW=Math.min(W*.2, u*28), m=u*5;
-    drawSignBlock(ctx,T,m,u*4.6,u*1.75,blockW,'left',interactive,rects);
-    drawDateBlock(ctx,T,W-m-blockW,u*4.6,u*1.75,blockW,'right',interactive,rects);
-    const free=(W/2 - R*1.17) - m - u*1.5;
-    const lu=u*1.75, maxW=Math.max(u*16, Math.min(u*24, free));
-    // measure legend height: draw off-screen first pass by computing via dry run
+    const m=u*4.5, blockW=u*25;
+    drawSignBlock(ctx,T,x0+m,u*4.6,u*1.75,blockW,'left',interactive,rects);
+    drawDateBlock(ctx,T,x0+cw-m-blockW,u*4.6,u*1.75,blockW,'right',interactive,rects);
+    const free=(cw/2 - R*1.17) - m - u*1;
+    const lu=u*1.75, maxW=Math.max(u*15, Math.min(u*22, free));
     const h=legendHeight(lu,maxW,u*1.6);
-    drawLegend(ctx,T,m,H-m-h,lu,maxW,u*1.6);
+    drawLegend(ctx,T,x0+m,H-m-h,lu,maxW,u*1.6);
   } else {
     u=W/100; R=W*.40; cx=W/2; cy=H*.49;
     drawTitle(ctx,T,cx,cy-R*1.17-u*5,u*8.6,rects);
@@ -665,23 +684,27 @@ function legendHeight(u,maxW,rowGap){
 }
 
 // ---------- on-screen canvas ----------
-const canvas=document.getElementById('poster'), ctx=canvas.getContext('2d'), box=document.getElementById('canvasBox');
-const SIZES={desktop:[3840,2160], phone:[1290,2796]};
+const $=s=>document.querySelector(s);
+const canvas=$('#poster'), ctx=canvas.getContext('2d'), stage=$('#stage'), hint=$('#hint');
+const PREVIEW={desktop:[297,210], phone:[1290,2796]};     // shape of the on-screen poster
+const EXPORT={desktop:[3840,2160], phone:[1290,2796]};    // wallpaper pixel sizes
 function sizeCanvas(){
-  const [w0,h0]=SIZES[state.preview], ar=w0/h0;
-  let w=box.clientWidth, h=w/ar;
-  const maxH=Math.max(440, window.innerHeight - (window.innerWidth>980?150:120));
-  if(h>maxH){ h=maxH; w=h*ar; }
-  const dpr=Math.min(Math.max(window.devicePixelRatio||1, 2), 3);
+  const [pw,ph]=PREVIEW[state.preview], ar=pw/ph;
+  const availW=stage.clientWidth, availH=stage.clientHeight-(hint.offsetHeight+8);
+  let w=availW, h=w/ar;
+  if(h>availH){ h=availH; w=h*ar; }
+  w=Math.max(120,w); h=Math.max(120,h);
+  const dpr=Math.min(Math.max(window.devicePixelRatio||1,2),3);
   canvas.style.width=w+'px'; canvas.style.height=h+'px';
   canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr);
 }
 function render(){
   geo=drawLayout(ctx,canvas.width,canvas.height,state.preview,true);
-  fitInfo=geo.fits;
-  updateMeters();
+  fitInfo=geo.fits; updateMeters();
 }
 let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
+const relayout=()=>{ sizeCanvas(); render(); };
+new ResizeObserver(()=>relayout()).observe(stage);
 
 function hitTest(ev){
   const rect=canvas.getBoundingClientRect();
@@ -704,47 +727,50 @@ canvas.addEventListener('mousemove',ev=>{
 });
 canvas.addEventListener('mouseleave',()=>{ if(hover){ hover=null; schedule(); } });
 canvas.addEventListener('click',ev=>{
-  const h=hitTest(ev); if(!h) return;
-  if(h.field){ ({name:nameIn,date:dateIn,title:titleIn})[h.field].focus(); return; }
+  const h=hitTest(ev);
+  if(!h){ closePop(); return; }
+  if(h.field){ openPop(h.field, ev.clientX, ev.clientY); return; }
+  closePop();
   select(h.area, h.label ? null : h.ring, true);
 });
 
-// ---------- editor ----------
-const $=s=>document.querySelector(s);
-const editorEmpty=$('#editorEmpty'), editorForm=$('#editorForm'), areaName=$('#areaName'), areaSwatch=$('#areaSwatch');
+// ---------- area editor ----------
+const editor=$('#editor'), areaName=$('#areaName'), areaSwatch=$('#areaSwatch');
 const tas=[...document.querySelectorAll('textarea[data-ring]')];
-const titleIn=$('#titleIn'), nameIn=$('#nameIn'), dateIn=$('#dateIn'), paperIn=$('#paperIn');
-
+function setActiveField(ring){ document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===ring)); }
 function select(area, ring, focus){
+  const wasOpen=!editor.hidden;
   sel={area, ring};
-  if(area===null){ editorEmpty.hidden=false; editorForm.hidden=true; }
+  if(area===null){ editor.hidden=true; }
   else {
-    editorEmpty.hidden=true; editorForm.hidden=false;
+    editor.hidden=false;
     const a=state.areas[area];
     areaName.value=a.name; areaSwatch.style.background=PALETTE[a.c];
     tas.forEach(t=>{ t.value=a[t.dataset.ring]; });
-    document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===ring));
+    setActiveField(ring);
     if(focus){
       const target = ring ? tas.find(t=>t.dataset.ring===ring) : areaName;
       target.focus({preventScroll:true});
       if(ring) target.setSelectionRange(target.value.length,target.value.length); else areaName.select();
-      if(window.innerWidth<=980) $('#editor').scrollIntoView({behavior:'smooth',block:'start'});
     }
   }
-  renderChips(); schedule();
+  if(wasOpen!==!editor.hidden) relayout(); else schedule();
 }
-tas.forEach(t=>{
+tas.forEach((t,i)=>{
   t.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area][t.dataset.ring]=t.value; persist(); schedule(); });
-  t.addEventListener('focus',()=>{ if(sel.area!==null && sel.ring!==t.dataset.ring){ sel.ring=t.dataset.ring;
-    document.querySelectorAll('.field').forEach(f=>f.classList.toggle('active', f.dataset.ring===sel.ring)); schedule(); } });
-  t.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); done(); } });
+  t.addEventListener('focus',()=>{ if(sel.area!==null && sel.ring!==t.dataset.ring){ sel.ring=t.dataset.ring; setActiveField(sel.ring); schedule(); } });
+  t.addEventListener('keydown',e=>{
+    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); if(i<tas.length-1) tas[i+1].focus(); else done(); }
+    if(e.key==='Escape') done();
+  });
 });
-areaName.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area].name=areaName.value; persist(); renderChips(); schedule(); });
-areaName.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); tas[0].focus(); } });
-function done(){ select(null,null,false); toast('Saved'); }
+areaName.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area].name=areaName.value; persist(); schedule(); });
+areaName.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); tas[0].focus(); } if(e.key==='Escape') done(); });
+function done(){ select(null,null,false); }
 $('#doneBtn').addEventListener('click',done);
-$('#prevArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area-1+n)%n, sel.ring||'goals', true); });
-$('#nextArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area+1)%n, sel.ring||'goals', true); });
+$('#closeEd').addEventListener('click',done);
+$('#prevArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area-1+n)%n, 'goals', true); });
+$('#nextArea').addEventListener('click',()=>{ const n=state.areas.length; select((sel.area+1)%n, 'goals', true); });
 $('#removeArea').addEventListener('click',()=>{
   if(state.areas.length<=MIN_AREAS){ toast(`A wheel needs at least ${MIN_AREAS} areas`); return; }
   const a=state.areas[sel.area];
@@ -752,25 +778,6 @@ $('#removeArea').addEventListener('click',()=>{
   if(hasText && !confirm(`Remove “${a.name||'this area'}” and everything written in it?`)) return;
   state.areas.splice(sel.area,1); persist(); select(null,null,false);
 });
-$('#addArea').addEventListener('click',()=>{
-  if(state.areas.length>=MAX_AREAS){ toast(`The wheel holds up to ${MAX_AREAS} areas`); return; }
-  const used=new Set(state.areas.map(a=>a.c));
-  let c=0; while(used.has(c) && c<PALETTE.length-1) c++;
-  state.areas.push({name:'', c, goals:'', steps:'', feel:''});
-  persist(); select(state.areas.length-1, null, true);
-});
-function renderChips(){
-  const wrap=$('#chips'); wrap.innerHTML='';
-  state.areas.forEach((a,i)=>{
-    const b=document.createElement('button'); b.className='chip'; b.type='button';
-    b.setAttribute('aria-current', sel.area===i ? 'true':'false');
-    const s=document.createElement('span'); s.className='swatch'; s.style.background=PALETTE[a.c];
-    b.append(s, document.createTextNode(a.name.trim()||'Unnamed area'));
-    b.addEventListener('click',()=>select(i,'goals',true));
-    wrap.append(b);
-  });
-  $('#addArea').disabled = state.areas.length>=MAX_AREAS;
-}
 function updateMeters(){
   document.querySelectorAll('.field').forEach(f=>{
     const i=f.querySelector('.meter i'), em=f.querySelector('.meter em');
@@ -785,18 +792,49 @@ function updateMeters(){
   });
 }
 
-// ---------- details + toggles ----------
-function syncInputs(){
-  titleIn.value=state.title; nameIn.value=state.name; dateIn.value=state.date||''; paperIn.value=state.paper;
+// ---------- poster detail popover (title, name, date) ----------
+const pop=$('#fieldPop'), fpInput=$('#fpInput'), fpLabel=$('#fpLabel');
+let popField=null;
+const POP={ title:{label:'Title', type:'text', ph:'My Goals'},
+            name:{label:'Signed', type:'text', ph:'Your name, or leave blank to sign by hand'},
+            date:{label:'Date', type:'date', ph:''} };
+function openPop(field,x,y){
+  popField=field; const cfg=POP[field];
+  fpLabel.textContent=cfg.label; fpInput.type=cfg.type; fpInput.placeholder=cfg.ph; fpInput.maxLength=40;
+  fpInput.value=state[field]||'';
+  pop.hidden=false;
+  const pw=pop.offsetWidth, ph=pop.offsetHeight;
+  pop.style.left=Math.max(8,Math.min(window.innerWidth-pw-8, x-pw/2))+'px';
+  pop.style.top=Math.max(8,Math.min(window.innerHeight-ph-8, y+14))+'px';
+  fpInput.focus(); if(cfg.type==='text') fpInput.select();
+}
+function closePop(){ if(!pop.hidden){ pop.hidden=true; popField=null; } }
+fpInput.addEventListener('input',()=>{ if(!popField) return; state[popField]=fpInput.value; persist(); schedule(); });
+fpInput.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); closePop(); } });
+$('#fpDone').addEventListener('click',closePop);
+
+// ---------- menus ----------
+function wireMenu(btn,menu){
+  btn.addEventListener('click',e=>{ e.stopPropagation(); const open=menu.hidden; closeMenus(); menu.hidden=!open; btn.setAttribute('aria-expanded',String(open)); if(open) menu.querySelector('button').focus(); });
+}
+function closeMenus(){ document.querySelectorAll('.menu').forEach(m=>m.hidden=true); document.querySelectorAll('[aria-haspopup]').forEach(b=>b.setAttribute('aria-expanded','false')); }
+wireMenu($('#dlBtn'),$('#dlMenu')); wireMenu($('#moreBtn'),$('#moreMenu'));
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.menuwrap')) closeMenus();
+  if(!pop.hidden && !e.target.closest('#fieldPop') && e.target!==canvas) closePop();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeMenus(); closePop(); } });
+
+// ---------- toggles ----------
+function syncToggles(){
   document.querySelectorAll('[data-preview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.preview===state.preview)));
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===state.theme)));
 }
-titleIn.addEventListener('input',()=>{ state.title=titleIn.value; persist(); schedule(); });
-nameIn.addEventListener('input',()=>{ state.name=nameIn.value; persist(); schedule(); });
-dateIn.addEventListener('input',()=>{ state.date=dateIn.value; persist(); schedule(); });
-paperIn.addEventListener('change',()=>{ state.paper=paperIn.value; persist(); });
-document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{ state.preview=b.dataset.preview; persist(); syncInputs(); sizeCanvas(); render(); }));
-document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{ state.theme=b.dataset.theme; persist(); syncInputs(); render(); }));
+document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{
+  if(state.preview===b.dataset.preview) return;
+  state.preview=b.dataset.preview; persist(); syncToggles(); syncCollageUI(); relayout();
+}));
+document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{ state.theme=b.dataset.theme; persist(); syncToggles(); render(); }));
 
 // ---------- exports ----------
 async function fontsReady(){
@@ -820,15 +858,15 @@ function download(blob,name){
 }
 async function exportPNG(mode){
   await fontsReady();
-  const [W,H]=SIZES[mode], c=renderOff(W,H,mode);
+  const [W,H]=EXPORT[mode], c=renderOff(W,H,mode);
   c.toBlob(b=>{ download(b,`${slug()}-${mode}.png`); toast(mode==='desktop'?'Downloaded desktop wallpaper':'Downloaded phone wallpaper'); },'image/png');
 }
-async function exportPDF(){
+async function exportPDF(paper){
   if(!window.jspdf){ toast('The PDF tool didn’t load. Check your connection and reload the page.'); return; }
   await fontsReady();
   const sizes={a4:[297,210], letter:[279.4,215.9], a3:[420,297]};
-  const [mmW,mmH]=sizes[state.paper]||sizes.a4;
-  const dpi=state.paper==='a3'?220:300;
+  const [mmW,mmH]=sizes[paper]||sizes.a4;
+  const dpi=paper==='a3'?220:300;
   const W=Math.round(mmW/25.4*dpi), H=Math.round(mmH/25.4*dpi);
   const c=renderOff(W,H,'desktop');
   const pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:[mmW,mmH]});
@@ -836,28 +874,39 @@ async function exportPDF(){
   pdf.save(`${slug()}.pdf`);
   toast('Downloaded printable PDF');
 }
-$('#dlDesktop').addEventListener('click',()=>exportPNG('desktop'));
-$('#dlPhone').addEventListener('click',()=>exportPNG('phone'));
-$('#dlPdf').addEventListener('click',exportPDF);
+document.querySelectorAll('[data-dl]').forEach(b=>b.addEventListener('click',()=>{
+  closeMenus(); const k=b.dataset.dl;
+  if(k.startsWith('pdf-')) exportPDF(k.slice(4)); else exportPNG(k);
+}));
 
-// ---------- save / open / reset ----------
+// ---------- more menu: areas, save / open / reset ----------
+$('#addArea').addEventListener('click',()=>{
+  closeMenus();
+  if(state.areas.length>=MAX_AREAS){ toast(`The wheel holds up to ${MAX_AREAS} areas`); return; }
+  const used=new Set(state.areas.map(a=>a.c));
+  let c=0; while(used.has(c) && c<PALETTE.length-1) c++;
+  state.areas.push({name:'', c, goals:'', steps:'', feel:''});
+  persist(); select(state.areas.length-1, null, true);
+});
 $('#saveFile').addEventListener('click',()=>{
+  closeMenus();
   download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), `${slug()}.json`); toast('Saved to file');
 });
 const fileIn=$('#fileIn');
-$('#openFile').addEventListener('click',()=>fileIn.click());
+$('#openFile').addEventListener('click',()=>{ closeMenus(); fileIn.click(); });
 fileIn.addEventListener('change',async()=>{
   const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
-  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); persist(); syncInputs(); syncCollageUI(); select(null,null,false); sizeCanvas(); render(); toast('Opened your saved wheel'); }
+  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
   catch(e){ toast('That file isn’t a saved goal wheel'); }
 });
 $('#resetAll').addEventListener('click',()=>{
+  closeMenus();
   if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
-  state=blankState(); persist(); syncInputs(); syncCollageUI(); select(null,null,false); sizeCanvas(); render();
+  state=blankState(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
 });
 
 let toastT=0;
-function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
 
 // ---------- AI collage ----------
 const STYLES = {
@@ -871,7 +920,7 @@ const ENGINE_NOTES = {
   nano: 'The first time, Puter asks you to sign in or create a free account in a pop-up. Images use your own Puter allowance, so this site stays free.',
   flux: 'No account needed. Quality is lower than the other options, it may add a small watermark, and you can create one image about every 15 seconds.',
 };
-const cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'), cResult=$('#cResult'), cImg=$('#cImg'), cGo=$('#cGo');
+const dlg=$('#collageDlg'), cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'), cFrame=$('#cFrame'), cActions=$('#cActions'), cGo=$('#cGo');
 const clean = t => t.replace(/\s*\n+\s*/g,'; ').replace(/\s+/g,' ').trim().replace(/[;.,\s]+$/,'');
 function buildPrompt(){
   const parts = state.areas.map(a=>{
@@ -883,11 +932,8 @@ function buildPrompt(){
     return line;
   }).filter(Boolean);
   if(!parts.length) return '';
-  const fmt = state.cFormat==='desktop'
-    ? 'a wide 16:9 landscape desktop wallpaper'
-    : 'a tall 9:19.5 portrait phone wallpaper';
-  const phoneNote = state.cFormat==='phone'
-    ? ' Keep the top fifth of the image calm and simple so a lock-screen clock stays readable.' : '';
+  const fmt = state.preview==='desktop' ? 'a wide 16:9 landscape desktop wallpaper' : 'a tall 9:19.5 portrait phone wallpaper';
+  const phoneNote = state.preview==='phone' ? ' Keep the top fifth of the image calm and simple so a lock-screen clock stays readable.' : '';
   return `A beautiful, high-end goal collage celebrating a joyful, balanced and fulfilled life, composed as one cohesive artwork for ${fmt}. `+
     `At the centre, a softly glowing heart radiates warm light that gently connects every scene. Around it, harmonious vignettes flow into one another, each showing one area of life as already achieved and deeply felt:\n\n`+
     parts.join('\n')+
@@ -901,24 +947,23 @@ function syncPrompt(force){
 }
 function syncCollageUI(){
   cStyle.value=state.cStyle; cEngine.value=state.cEngine;
-  document.querySelectorAll('[data-cformat]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cformat===state.cFormat)));
   $('#cNote').textContent=ENGINE_NOTES[state.cEngine];
   syncPrompt(false);
 }
+$('#collageBtn').addEventListener('click',()=>{ closeMenus(); closePop(); syncCollageUI(); dlg.showModal(); });
+$('#closeDlg').addEventListener('click',()=>dlg.close());
+dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
 cPrompt.addEventListener('input',()=>{ state.cPrompt=cPrompt.value; state.cEdited=true; persist(); });
 $('#cRebuild').addEventListener('click',()=>{ syncPrompt(true); cPrompt.value=state.cPrompt; persist(); toast('Description rebuilt from your goals'); });
-cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; if(state.cEdited){ toast('Style changed. Use “Rebuild from my goals” to apply it to your edited description.'); } syncPrompt(false); persist(); });
+cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; if(state.cEdited) toast('Use “Rebuild from my goals” to apply the new style to your edited description.'); syncPrompt(false); persist(); });
 cEngine.addEventListener('change',()=>{ state.cEngine=cEngine.value; syncCollageUI(); persist(); });
-document.querySelectorAll('[data-cformat]').forEach(b=>b.addEventListener('click',()=>{ state.cFormat=b.dataset.cformat; syncCollageUI(); persist(); }));
 
 function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
 let lastImage=null, fluxReadyAt=0, busy=false;
 function showResult(src){
-  lastImage={src, format:state.cFormat};
-  cImg.src=src; cResult.hidden=false;
-  cImg.style.aspectRatio = state.cFormat==='desktop' ? '16/9' : '9/19.5';
-  cImg.style.objectFit='cover';
-  if(state.cFormat==='phone'){ cImg.style.maxHeight='520px'; cImg.style.width='auto'; cImg.style.margin='0 auto'; } else { cImg.style.maxHeight=''; cImg.style.width='100%'; cImg.style.margin=''; }
+  lastImage={src, format:state.preview};
+  cFrame.innerHTML=''; const im=new Image(); im.src=src; im.alt='Your AI goal collage';
+  cFrame.append(im); cFrame.classList.add('has'); cActions.hidden=false;
 }
 function promptOrWarn(){
   const p=(cPrompt.value||'').trim();
@@ -928,22 +973,16 @@ function promptOrWarn(){
 async function genPuter(prompt){
   if(!window.puter) throw {code:'no_puter'};
   if(!puter.auth.isSignedIn()) await puter.auth.signIn();
-  const ratio = state.cFormat==='desktop' ? {w:16,h:9} : {w:9,h:19.5};
-  const opts = state.cEngine==='gpt'
-    ? {model:'gpt-image-2', quality:'high', ratio}
-    : {model:'gemini-3-pro-image', quality:'2K', ratio};
+  const ratio = state.preview==='desktop' ? {w:16,h:9} : {w:9,h:19.5};
+  const opts = state.cEngine==='gpt' ? {model:'gpt-image-2', quality:'high', ratio} : {model:'gemini-3-pro-image', quality:'2K', ratio};
   const img = await puter.ai.txt2img(prompt, opts);
   return img.src;
 }
 function genFlux(prompt){
-  const [w,h] = state.cFormat==='desktop' ? [1920,1080] : [1080,2340];
+  const [w,h] = state.preview==='desktop' ? [1920,1080] : [1080,2340];
   const short = prompt.length>1600 ? prompt.slice(0,1600) : prompt;
   const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(short)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
-  return new Promise((res,rej)=>{
-    const im=new Image();
-    im.onload=()=>res(url); im.onerror=()=>rej({code:'flux_failed'});
-    im.src=url;
-  });
+  return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(url); im.onerror=()=>rej({code:'flux_failed'}); im.src=url; });
 }
 cGo.addEventListener('click',async()=>{
   if(busy) return;
@@ -991,15 +1030,14 @@ $('#cDownload').addEventListener('click',async()=>{
   }catch(e){ window.open(lastImage.src,'_blank','noopener'); toast('Opened full size. Right-click or long-press to save it.'); }
 });
 $('#cOpen').addEventListener('click',()=>{ if(lastImage) window.open(lastImage.src,'_blank','noopener'); });
-// keep the auto description in step with the wheel
+// keep the automatic description in step with the wheel
 const _persist=persist;
 persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
 
 // ---------- boot ----------
-syncInputs(); syncCollageUI(); renderChips(); sizeCanvas(); render();
-window.addEventListener('resize',()=>{ sizeCanvas(); render(); });
+syncToggles(); syncCollageUI(); relayout();
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
-window.__goalWheel={get state(){return state}, set(s){state=normalise(s); syncInputs(); syncCollageUI(); renderChips(); sizeCanvas(); render();}, renderOff, select};
+window.__goalWheel={get state(){return state}, set(s){state=normalise(s); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop};
 })();
 </script>
 </body>
