@@ -125,6 +125,27 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .exbox input{width:16px;height:16px;accent-color:var(--rose);margin:0;cursor:pointer}
 .exbox:has(input:checked){border-color:var(--rose)}
 .exbadge{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:2;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;box-shadow:var(--shadow);white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+.split{display:inline-flex}
+.split #collageBtn{border-top-right-radius:0;border-bottom-right-radius:0}
+.gearbtn{border-top-left-radius:0;border-bottom-left-radius:0;border-left:1px solid rgba(255,255,255,.35);padding:7px 10px;font-size:15px;line-height:1}
+.cdlg{display:flex;flex-direction:column;gap:10px;padding:16px 18px 18px;max-height:92dvh;overflow:auto}
+.cdlg .dlghead{display:flex;justify-content:space-between;align-items:center}
+.cdlg h2{font:400 22px/1.2 var(--display);margin:0}
+.x.gear{font-size:19px}
+.x.gear[aria-expanded="true"]{background:var(--field);color:var(--ink)}
+#collageDlg.desktop{width:min(980px,94vw)}
+#collageDlg.phone{width:min(460px,94vw)}
+.cdlg .frame{flex:none;min-height:0;margin:0 auto;border-radius:12px;background:var(--field);border:1.5px dashed var(--line);display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:14px;text-align:center;padding:16px}
+#collageDlg.desktop .frame{width:100%;aspect-ratio:16/9;max-height:60dvh}
+#collageDlg.phone .frame{height:min(62dvh,760px);aspect-ratio:9/19.5;max-width:100%}
+.cdlg .frame.has{border-style:solid;padding:0;background:#000}
+.cdlg .frame img{width:100%;height:100%;object-fit:cover;display:block}
+.spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--rose);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.spin{animation-duration:3s}}
+#collageDlg.phone.setopen .frame{height:min(36dvh,420px)}
+#collageDlg.desktop.setopen .frame{max-height:34dvh}
+.csettings{border-top:1px solid var(--line);padding-top:12px}
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
 .pop #sigRemove{margin-top:8px}
@@ -179,7 +200,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
         <button data-dl="pdf">PDF to print <small id="pdfHint">A4 landscape</small></button>
       </div>
     </div>
-    <button class="btn primary" id="collageBtn">Generate AI collage</button>
+    <div class="split"><button class="btn primary" id="collageBtn">Generate AI collage</button><button class="btn primary gearbtn" id="collageCog" aria-label="Collage settings" title="Collage settings">⚙</button></div>
     <div class="menuwrap">
       <button class="btn icon" id="moreBtn" aria-label="More options" aria-haspopup="true" aria-expanded="false">⋯</button>
       <div class="menu" id="moreMenu" hidden>
@@ -237,18 +258,21 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 </div>
 
 <dialog id="collageDlg" aria-label="AI collage">
-  <div class="dlg">
+  <div class="cdlg">
     <div class="dlghead">
-      <h2>Generate AI collage</h2>
+      <h2>Your AI collage</h2>
       <div class="row">
-        <div class="seg" role="group" aria-label="Output format">
-          <button data-preview="desktop" aria-pressed="true">Desktop</button>
-          <button data-preview="phone" aria-pressed="false">Phone</button>
-        </div>
+        <button class="x gear" id="cSettingsBtn" aria-label="Collage settings" aria-expanded="false" title="Collage settings">⚙</button>
         <button class="x" id="closeDlg" aria-label="Close">×</button>
       </div>
     </div>
-    <div>
+    <div class="frame" id="cFrame"></div>
+    <p class="cstatus" id="cStatus" aria-live="polite"></p>
+    <div class="row" id="cActions" hidden>
+      <button class="btn primary grow" id="cDownload">Download</button>
+      <button class="btn" id="cAgain">Make another</button>
+    </div>
+    <div class="csettings" id="cSettings" hidden>
       <label class="inp"><span>Style</span>
         <select id="cStyle">
           <option value="board">Vision board collage</option>
@@ -257,26 +281,18 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
           <option value="ethereal">Soft, glowing painting</option>
         </select></label>
       <label class="inp"><span>Image description <button type="button" class="link" id="cRebuild">Rebuild from my goals</button></span>
-        <textarea id="cPrompt" rows="9"></textarea></label>
+        <textarea id="cPrompt" rows="7"></textarea></label>
       <label class="inp"><span>Image generator</span>
         <select id="cEngine">
-          <option value="gpt">GPT Image 2 (best, free Puter sign-in)</option>
+          <option value="flux">Standard (one click, no sign-in)</option>
+          <option value="gpt">GPT Image 2 (higher quality, free Puter sign-in)</option>
           <option value="nano">Nano Banana Pro (free Puter sign-in)</option>
-          <option value="flux">Flux (instant, no sign-up)</option>
         </select></label>
-      <button class="btn primary" id="cGo" style="width:100%">Create collage</button>
-      <div class="row" style="margin-top:8px">
-        <button class="btn grow" id="cCopy">Copy description</button>
-        <button class="btn grow" id="cChatGPT">Open in ChatGPT</button>
-      </div>
-      <p class="cstatus" id="cStatus" aria-live="polite"></p>
       <p class="note" id="cNote"></p>
-    </div>
-    <div class="preview">
-      <div class="frame" id="cFrame">Your collage appears here.</div>
-      <div class="row" id="cActions" hidden>
-        <button class="btn primary grow" id="cDownload">Download image</button>
-        <button class="btn" id="cOpen">Open full size</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="cGo">Create with these settings</button>
+        <button class="btn" id="cCopy">Copy description</button>
+        <button class="btn" id="cChatGPT">Open in ChatGPT</button>
       </div>
     </div>
   </div>
@@ -298,7 +314,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.4';
+const APP_VERSION = 'v1.5';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -356,7 +372,7 @@ const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTi
 function blankState(){
   return {
     v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
-    cStyle:'board', cEngine:'gpt', cPrompt:'', cEdited:false,
+    cStyle:'board', cEngine:'flux', cGenV:2, cPrompt:'', cEdited:false,
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
 }
@@ -370,6 +386,8 @@ function normalise(s){
   out.areas = s.areas.map((a,i)=>({name:String(a.name).slice(0,40), c:Number.isInteger(a.c)?a.c%PALETTE.length:i%PALETTE.length,
     goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
   if(typeof out.sig!=='string' || !out.sig.startsWith('data:image/')) out.sig='';
+  if(s.cGenV!==2){ out.cEngine='flux'; out.cGenV=2; }
+  if(!['flux','gpt','nano'].includes(out.cEngine)) out.cEngine='flux';
   if(!THEMES[out.theme]) out.theme='colour';
   if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
   return out;
@@ -1015,11 +1033,12 @@ const STYLES = {
   ethereal: 'ethereal, painterly digital art with soft glowing light, gentle mist, iridescent highlights and a serene, uplifting atmosphere',
 };
 const ENGINE_NOTES = {
-  gpt: 'The first time, Puter asks you to sign in or create a free account in a pop-up. Images use your own Puter allowance, so this site stays free. High-quality images take up to a minute.',
-  nano: 'The first time, Puter asks you to sign in or create a free account in a pop-up. Images use your own Puter allowance, so this site stays free.',
-  flux: 'No account needed. Quality is lower than the other options, it may add a small watermark, and you can create one image about every 15 seconds.',
+  flux: 'One click, no account needed. You can make a new picture about every 15 seconds.',
+  gpt: 'Sharper, more detailed pictures. The first time, a pop-up asks you to sign in to Puter or make a free account. Pictures use your own Puter allowance.',
+  nano: 'The first time, a pop-up asks you to sign in to Puter or make a free account. Pictures use your own Puter allowance.',
 };
-const dlg=$('#collageDlg'), cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'), cFrame=$('#cFrame'), cActions=$('#cActions'), cGo=$('#cGo');
+const dlg=$('#collageDlg'), cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'),
+      cFrame=$('#cFrame'), cActions=$('#cActions'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn');
 const clean = t => t.replace(/\s*\n+\s*/g,'; ').replace(/\s+/g,' ').trim().replace(/[;.,\s]+$/,'');
 function buildPrompt(){
   const parts = state.areas.map(a=>{
@@ -1047,28 +1066,35 @@ function syncPrompt(force){
 function syncCollageUI(){
   cStyle.value=state.cStyle; cEngine.value=state.cEngine;
   $('#cNote').textContent=ENGINE_NOTES[state.cEngine];
+  dlg.classList.toggle('desktop', state.preview==='desktop'); dlg.classList.toggle('phone', state.preview==='phone');
+  $('#cDownload').textContent = state.preview==='desktop' ? 'Download desktop wallpaper' : 'Download phone wallpaper';
   syncPrompt(false);
 }
-$('#collageBtn').addEventListener('click',()=>{ closeMenus(); closePop(); syncCollageUI(); dlg.showModal(); });
+function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
+let lastImage=null, fluxReadyAt=0, busy=false, genToken=0;
+function resetCollage(){
+  lastImage=null; cFrame.classList.remove('has'); cActions.hidden=true; setStatus('');
+  cFrame.textContent='Your collage appears here.';
+}
+function showSettings(open){ cSettings.hidden=!open; cSettingsBtn.setAttribute('aria-expanded',String(open)); dlg.classList.toggle('setopen',open); }
+function openCollage(withSettings){
+  closeMenus(); closePop(); syncCollageUI();
+  if(lastImage && lastImage.format!==state.preview) resetCollage();
+  showSettings(!!withSettings);
+  if(!dlg.open) dlg.showModal();
+}
+$('#collageBtn').addEventListener('click',()=>{ openCollage(false); if(!busy) generate(); });
+$('#collageCog').addEventListener('click',()=>openCollage(true));
+cSettingsBtn.addEventListener('click',()=>showSettings(cSettings.hidden));
 $('#closeDlg').addEventListener('click',()=>dlg.close());
 dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
 cPrompt.addEventListener('input',()=>{ state.cPrompt=cPrompt.value; state.cEdited=true; persist(); });
 $('#cRebuild').addEventListener('click',()=>{ syncPrompt(true); cPrompt.value=state.cPrompt; persist(); toast('Description rebuilt from your goals'); });
 cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; if(state.cEdited) toast('Use “Rebuild from my goals” to apply the new style to your edited description.'); syncPrompt(false); persist(); });
 cEngine.addEventListener('change',()=>{ state.cEngine=cEngine.value; syncCollageUI(); persist(); });
+$('#cGo').addEventListener('click',()=>{ if(!busy) generate(); });
+$('#cAgain').addEventListener('click',()=>{ if(!busy) generate(); });
 
-function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
-let lastImage=null, fluxReadyAt=0, busy=false;
-function showResult(src){
-  lastImage={src, format:state.preview};
-  cFrame.innerHTML=''; const im=new Image(); im.src=src; im.alt='Your AI goal collage';
-  cFrame.append(im); cFrame.classList.add('has'); cActions.hidden=false;
-}
-function promptOrWarn(){
-  const p=(cPrompt.value||'').trim();
-  if(!p){ setStatus('Write at least one goal on the wheel first, or type your own description.',true); return null; }
-  return p;
-}
 async function genPuter(prompt){
   if(!window.puter) throw {code:'no_puter'};
   if(!puter.auth.isSignedIn()) await puter.auth.signIn();
@@ -1078,57 +1104,67 @@ async function genPuter(prompt){
   return img.src;
 }
 function genFlux(prompt){
-  const [w,h] = state.preview==='desktop' ? [1920,1080] : [1080,2340];
-  const short = prompt.length>1600 ? prompt.slice(0,1600) : prompt;
+  const [w,h] = state.preview==='desktop' ? [1920,1080] : [1088,2352];
+  const short = prompt.length>1500 ? prompt.slice(0,1500) : prompt;
   const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(short)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
-  return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(url); im.onerror=()=>rej({code:'flux_failed'}); im.src=url; });
+  return new Promise((res,rej)=>{
+    const im=new Image(); const t=setTimeout(()=>{ im.src=''; rej({code:'flux_timeout'}); },120000);
+    im.onload=()=>{ clearTimeout(t); res(url); }; im.onerror=()=>{ clearTimeout(t); rej({code:'flux_failed'}); };
+    im.src=url;
+  });
 }
-cGo.addEventListener('click',async()=>{
-  if(busy) return;
-  const prompt=promptOrWarn(); if(!prompt) return;
+async function generate(){
+  const prompt=(state.cPrompt||buildPrompt()).trim();
+  if(!prompt){ resetCollage(); setStatus('Write at least one goal on the wheel first, then try again.',true); return; }
   if(state.cEngine==='flux' && Date.now()<fluxReadyAt){
-    setStatus(`Flux allows one image about every 15 seconds. Try again in ${Math.ceil((fluxReadyAt-Date.now())/1000)} seconds.`,true); return;
+    setStatus(`You can make a new picture in ${Math.ceil((fluxReadyAt-Date.now())/1000)} seconds.`,true); return;
   }
-  busy=true; cGo.disabled=true; cGo.textContent='Creating…';
-  setStatus(state.cEngine==='flux' ? 'Creating your collage. This usually takes 10 to 30 seconds.' : 'Creating your collage. This can take up to a minute.');
+  const token=++genToken; busy=true;
+  cActions.hidden=true; cFrame.classList.remove('has');
+  cFrame.innerHTML='<div class="spin" aria-hidden="true"></div><div>Creating your collage…</div>';
+  setStatus(state.cEngine==='flux' ? 'This usually takes 10 to 40 seconds.' : 'This can take up to a minute.');
   try{
     const src = state.cEngine==='flux' ? await genFlux(prompt) : await genPuter(prompt);
+    if(token!==genToken) return;
     if(state.cEngine==='flux') fluxReadyAt=Date.now()+15000;
-    showResult(src); setStatus('Your collage is ready.');
+    lastImage={src, format:state.preview};
+    cFrame.innerHTML=''; const im=new Image(); im.alt='Your AI goal collage'; im.src=src; cFrame.append(im); cFrame.classList.add('has');
+    cActions.hidden=false; setStatus('');
   }catch(e){
+    if(token!==genToken) return;
     const code = e && (e.errorCode || e.code || (e.error && e.error.code));
     let msg;
-    if(code==='no_puter') msg='The Puter service didn’t load. Check your connection and reload the page, or choose Flux.';
-    else if(code==='insufficient_funds') msg='Your free Puter allowance has run out for now. Choose Flux, or use “Open in ChatGPT”.';
-    else if(code==='moderation_flagged') msg='The image service declined this description. Try rewording it.';
-    else if(code==='flux_failed') msg='Flux couldn’t create the image just now. Wait a moment and try again, or choose another generator.';
-    else if(e && /sign|auth|popup|cancel/i.test(String(e.message||e))) msg='Sign-in was cancelled. Create collage again to sign in, or choose Flux.';
-    else msg='The image couldn’t be created. '+((e && e.message) ? e.message : 'Try again in a moment.');
-    setStatus(msg,true);
-  }finally{ busy=false; cGo.disabled=false; cGo.textContent='Create collage'; }
-});
+    if(code==='flux_failed'||code==='flux_timeout') msg='The picture couldn’t be made just now. Wait a few seconds and click Make another.';
+    else if(code==='no_puter') msg='The Puter service didn’t load. Reload the page, or choose Standard in the settings (cog).';
+    else if(code==='insufficient_funds') msg='Your free Puter allowance has run out for now. Choose Standard in the settings (cog).';
+    else if(code==='moderation_flagged') msg='The picture service declined this description. Try changing the words in the settings (cog).';
+    else if(e && /sign|auth|popup|cancel/i.test(String(e.message||e))) msg='Sign-in was cancelled. Choose Standard in the settings (cog) to skip signing in.';
+    else msg='The picture couldn’t be made. '+((e && e.message) ? e.message : 'Try again in a moment.');
+    cFrame.textContent='No picture yet.'; cActions.hidden=false; setStatus(msg,true);
+  }finally{ if(token===genToken) busy=false; }
+}
 async function copyText(t){
   try{ await navigator.clipboard.writeText(t); return true; }
   catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.append(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(_){} ta.remove(); return ok; }
 }
-$('#cCopy').addEventListener('click',async()=>{ const p=promptOrWarn(); if(!p) return; toast(await copyText(p)?'Description copied':'Select the description and copy it manually'); });
+const currentPrompt=()=>{ const p=(cPrompt.value||'').trim(); if(!p) setStatus('Write at least one goal on the wheel first.',true); return p; };
+$('#cCopy').addEventListener('click',async()=>{ const p=currentPrompt(); if(!p) return; toast(await copyText(p)?'Description copied':'Select the description and copy it manually'); });
 $('#cChatGPT').addEventListener('click',async()=>{
-  const p=promptOrWarn(); if(!p) return;
+  const p=currentPrompt(); if(!p) return;
   const full='Please create this image. '+p;
   await copyText(full);
   window.open('https://chatgpt.com/?q='+encodeURIComponent(full),'_blank','noopener');
-  setStatus('Opened ChatGPT with your description. It’s also copied, in case you need to paste it.');
+  toast('Opened ChatGPT. The description is also copied.');
 });
 $('#cDownload').addEventListener('click',async()=>{
   if(!lastImage) return;
-  const name=`${slug()}-collage-${lastImage.format}`;
+  const name=`${slug()}-collage-${lastImage.format==='desktop'?'desktop-landscape':'phone-portrait'}`;
   try{
     const r=await fetch(lastImage.src); if(!r.ok) throw 0;
     const b=await r.blob(); const ext=(b.type.split('/')[1]||'png').replace('jpeg','jpg');
     download(b,`${name}.${ext}`); toast('Downloaded your collage');
   }catch(e){ window.open(lastImage.src,'_blank','noopener'); toast('Opened full size. Right-click or long-press to save it.'); }
 });
-$('#cOpen').addEventListener('click',()=>{ if(lastImage) window.open(lastImage.src,'_blank','noopener'); });
 // keep the automatic description in step with the wheel
 const _persist=persist;
 persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
@@ -1162,7 +1198,7 @@ function setExample(on){
     exampleOn=false; state=ownState; ownState=null; persist();
   }
   $('#exampleToggle').checked=on; $('#exBadge').hidden=!on;
-  lastImage=null; cFrame.innerHTML='Your collage appears here.'; cFrame.classList.remove('has'); cActions.hidden=true; setStatus('');
+  resetCollage();
   loadSig(); syncToggles(); syncCollageUI(); relayout();
 }
 $('#exampleToggle').addEventListener('change',e=>setExample(e.target.checked));
@@ -1192,7 +1228,7 @@ const TOUR=[
   {t:()=>elRect('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
   {t:()=>elRect('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elRect('#dlBtn'), h:'Export', p:'When you are happy, click Export to save your wheel as a wallpaper for your computer or phone, or as a PDF to print and stick on your wall.'},
-  {t:()=>elRect('#collageBtn'), h:'Generate AI collage', p:'Click here to turn your goals into a beautiful picture made by AI. You can use it as a wallpaper too.'},
+  {t:()=>elRect('.split'), h:'Generate AI collage', p:'Click here once and AI turns your goals into a beautiful picture you can download as a wallpaper. The little cog lets you change the style or the words used to make it.'},
   {t:()=>elRect('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
   {t:()=>elRect('#tourBtn'), h:'That’s it!', p:'Click Show me how any time to see this tour again. Have fun dreaming big!'},
 ];

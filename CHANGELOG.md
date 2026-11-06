@@ -2,6 +2,11 @@
 
 The current version is shown next to "Goal Wheel" in the top bar.
 
+## v1.5
+- Generate AI collage is now one click: no sign-in, the picture appears with a Download button for desktop (landscape) or phone (portrait)
+- New cog next to the button (and in the collage window) for style, wording and generator settings
+- Puter generators (GPT Image 2, Nano Banana Pro) remain as optional higher-quality choices
+
 ## v1.4
 - Version number shown in the app
 
