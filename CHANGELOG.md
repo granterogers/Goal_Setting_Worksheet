@@ -1,6 +1,13 @@
 # Changelog
 
-The current version is shown next to "Goal Wheel" in the top bar.
+The current version is shown in the bottom-right corner of the app.
+
+## v1.7
+- Larger wheel, legend, signature and date on both desktop and phone; phone wheel moved up
+- Removed the "Update on" reminder text
+- Toolbar: "✓ Get started" and "Show example" on the left; output format, colour/black & white, Export and ⋯ on the right
+- "Colours" label removed
+- Version label moved to the bottom-right corner
 
 ## v1.6
 - "Getting started" (green) replaces "Show me how" and sits far left, followed by Output format, Colours and Show example

@@ -37,8 +37,8 @@ button,input,textarea,select{font:inherit;color:inherit}
 
 /* top bar */
 .bar{flex:none;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
-.brand{font:400 17px/1 var(--display);letter-spacing:.02em;margin-left:6px;white-space:nowrap;color:var(--muted)}
-.ver{font:600 11px/1 var(--sans);color:var(--muted);opacity:.75;letter-spacing:.03em;margin-left:4px;vertical-align:middle}
+.brand{position:fixed;right:12px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:3;font:400 12px/1 var(--display);letter-spacing:.03em;color:var(--muted);opacity:.7;pointer-events:none;white-space:nowrap}
+.ver{font:600 10.5px/1 var(--sans);letter-spacing:.03em;margin-left:3px}
 .group{display:flex;align-items:center;gap:8px}
 .glabel{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
 .seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:3px}
@@ -203,19 +203,18 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <body>
 
 <header class="bar">
-  <button class="btn go" id="tourBtn">Getting started</button>
+  <button class="btn go" id="tourBtn">✓ Get started</button>
+  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> Show example</label>
+  <div class="spacer"></div>
   <div class="group"><span class="glabel">Output format</span>
     <div class="seg fmt" id="fmtSeg" role="group" aria-label="Output format">
       <button data-preview="desktop" aria-pressed="true">Desktop</button>
       <button data-preview="phone" aria-pressed="false">Phone</button>
     </div></div>
-  <div class="group"><span class="glabel">Colours</span>
-    <div class="seg col" id="colSeg" role="group" aria-label="Colours">
-      <button data-theme="colour" aria-pressed="true">Colour</button>
-      <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
-    </div></div>
-  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> Show example</label>
-  <div class="spacer"></div>
+  <div class="seg col" id="colSeg" role="group" aria-label="Colours">
+    <button data-theme="colour" aria-pressed="true">Colour</button>
+    <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
+  </div>
   <div class="actions">
     <div class="menuwrap">
       <button class="btn primary" id="dlBtn" aria-haspopup="true" aria-expanded="false">Export ▾</button>
@@ -236,7 +235,6 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
         <button id="resetAll">Start over with a blank wheel</button>
       </div>
     </div>
-    <div class="brand">Goal Wheel <span class="ver" id="appVer" title="Version"></span></div>
   </div>
   <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
 </header>
@@ -328,12 +326,13 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   </div>
 </div>
 
+<div class="brand" aria-label="App version">Goal Wheel <span class="ver" id="appVer"></span></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.6';
+const APP_VERSION = 'v1.7';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -740,9 +739,7 @@ function drawDateBlock(ctx,T,x,y,u,w,align,interactive,rects){
   if(d) ctx.fillText(d,lx,lineY-u*.55);
   ctx.strokeStyle=T.ink; ctx.globalAlpha=.35; ctx.lineWidth=Math.max(1,u*.09);
   ctx.beginPath(); ctx.moveTo(x,lineY); ctx.lineTo(x+w,lineY); ctx.stroke(); ctx.globalAlpha=1;
-  ctx.font=`700 ${subFs}px ${F.ui.fam}`; ctx.fillStyle=T.accent;
-  ctx.fillText(d ? `Update on ${fmtDate(state.date,14)}` : 'Update in 2 weeks!', lx, lineY+subFs*1.9);
-  rects.date={x,y,w,h:lineY-y+subFs*2.4};
+  rects.date={x,y,w,h:lineY-y+u};
 }
 function drawTitle(ctx,T,cx,y,fs,rects){
   const t=state.title.trim(); if(!t) { rects.title={x:cx-fs*4,y:y-fs,w:fs*8,h:fs*1.3}; return; }
@@ -761,24 +758,24 @@ function drawLayout(ctx,W,H,mode,interactive){
   let cx,cy,R,u;
   if(mode==='desktop'){
     u=H/100; const cw=Math.min(W, H*297/210), x0=(W-cw)/2;   // keep everything inside an A4-shaped box
-    R=Math.min(H*.36, cw*.25); cx=W/2; cy=H*.545;
-    drawTitle(ctx,T,cx,H*.088,u*5.6,rects);
-    const m=u*4.5, blockW=u*25;
-    drawSignBlock(ctx,T,x0+m,u*4.6,u*1.75,blockW,'left',interactive,rects);
-    drawDateBlock(ctx,T,x0+cw-m-blockW,u*4.6,u*1.75,blockW,'right',interactive,rects);
-    const free=(cw/2 - R*1.17) - m - u*1;
-    const lu=u*1.75, maxW=Math.max(u*15, Math.min(u*22, free));
-    const h=legendHeight(lu,maxW,u*1.6);
-    drawLegend(ctx,T,x0+m,H-m-h,lu,maxW,u*1.6);
+    R=Math.min(H*.378, cw*.262); cx=W/2; cy=H*.558;
+    drawTitle(ctx,T,cx,H*.088,u*6.2,rects);
+    const m=u*4, blockW=u*30;
+    drawSignBlock(ctx,T,x0+m,u*4,u*2.15,blockW,'left',interactive,rects);
+    drawDateBlock(ctx,T,x0+cw-m-blockW,u*4,u*2.15,blockW,'right',interactive,rects);
+    const free=(cw/2 - R*1.12) - m - u*.5;
+    const lu=u*2.15, maxW=Math.max(u*16, Math.min(u*28, free));
+    const h=legendHeight(lu,maxW,u*2);
+    drawLegend(ctx,T,x0+m,H-m-h,lu,maxW,u*2);
   } else if(mode==='phone'){
-    u=W/100; R=W*.40; cx=W/2; cy=H*.49;
-    drawTitle(ctx,T,cx,cy-R*1.17-u*5,u*8.6,rects);
-    const ly=cy+R*1.17+u*5;
-    const lu=u*2.45, lw=u*72;
-    const bottom=drawLegend(ctx,T,(W-lw)/2+u*3,ly,lu,lw,u*1.6);
-    const by=bottom+u*5;
-    drawSignBlock(ctx,T,u*8,by,u*2.6,u*40,'left',interactive,rects);
-    drawDateBlock(ctx,T,W-u*8-u*34,by,u*2.6,u*34,'right',interactive,rects);
+    u=W/100; R=W*.43; cx=W/2; cy=H*.405;
+    drawTitle(ctx,T,cx,cy-R*1.16-u*4.5,u*9.5,rects);
+    const ly=cy+R*1.17+u*6;
+    const lu=u*3.0, lw=u*80;
+    const bottom=drawLegend(ctx,T,(W-lw)/2+u*2,ly,lu,lw,u*2.2);
+    const by=bottom+u*7;
+    drawSignBlock(ctx,T,u*7,by,u*3.2,u*42,'left',interactive,rects);
+    drawDateBlock(ctx,T,W-u*7-u*36,by,u*3.2,u*36,'right',interactive,rects);
   } else {   // 'print-portrait': A4 portrait PDF
     u=W/100; R=u*37; cx=W/2; cy=H*.43;
     drawTitle(ctx,T,cx,u*11,u*6.6,rects);
@@ -1278,13 +1275,13 @@ const TOUR=[
   {t:wheelShape, h:'Typing in a slice', p:'When you click a slice, a little box opens on the right. Press Enter to jump to the next ring, and click Next area to move around the wheel. Click Done when you finish.'},
   {t:()=>fieldShape('title'), h:'The title', p:'Click the title to change it.'},
   {t:()=>fieldShape('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
-  {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it. Your poster reminds you to come back and update it in two weeks.'},
+  {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
   {t:()=>elShape('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
-  {t:()=>elShape('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elShape('#colSeg'), h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
   {t:()=>elShape('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
-  {t:()=>elShape('#tourBtn'), h:'That’s it!', p:'Click Getting started any time to see this tour again. Have fun dreaming big!'},
+  {t:()=>elShape('#tourBtn'), h:'That’s it!', p:'Click Get started any time to see this tour again. Have fun dreaming big!'},
 ];
 let tourIdx=0;
 function placeTour(){
