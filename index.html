@@ -39,6 +39,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 /* top bar */
 .bar{flex:none;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
 .brand{font:400 22px/1 var(--display);letter-spacing:.02em;margin-right:4px;white-space:nowrap}
+.ver{font:600 11px/1 var(--sans);color:var(--muted);opacity:.75;letter-spacing:.03em;margin-left:4px;vertical-align:middle}
 .group{display:flex;align-items:center;gap:8px}
 .glabel{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
 .seg{display:inline-flex;background:var(--field);border:1px solid var(--line);border-radius:999px;padding:3px}
@@ -155,7 +156,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <body>
 
 <header class="bar">
-  <div class="brand">Goal Wheel</div>
+  <div class="brand">Goal Wheel <span class="ver" id="appVer" title="Version"></span></div>
   <div class="group"><span class="glabel">Output format</span>
     <div class="seg" id="fmtSeg" role="group" aria-label="Output format">
       <button data-preview="desktop" aria-pressed="true">Desktop</button>
@@ -297,6 +298,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
+const APP_VERSION = 'v1.4';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -1226,6 +1228,7 @@ document.addEventListener('keydown',e=>{ if(tourEl.hidden) return;
 window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(placeTour); });
 
 // ---------- boot ----------
+$('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
 loadSig();
 syncToggles(); syncCollageUI(); relayout();
