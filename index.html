@@ -99,6 +99,7 @@ canvas#poster{display:block;border-radius:6px;box-shadow:var(--shadow);touch-act
 
 /* area editor */
 .editor[hidden]{display:block!important;visibility:hidden}
+.editor.tucked{visibility:hidden}
 @media (min-width:861px){#closeEd,#doneBtn{display:none}}
 #edLocked{padding:4px 2px}
 #edLocked h3{font:400 20px/1.2 var(--display);margin:0 0 6px}
@@ -354,7 +355,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.9';
+const APP_VERSION = 'v1.10';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -1001,9 +1002,9 @@ async function processSig(file){
 
 // ---------- menus ----------
 function wireMenu(btn,menu){
-  btn.addEventListener('click',e=>{ e.stopPropagation(); const open=menu.hidden; closeMenus(); menu.hidden=!open; btn.setAttribute('aria-expanded',String(open)); if(open) menu.querySelector('button').focus(); });
+  btn.addEventListener('click',e=>{ e.stopPropagation(); const open=menu.hidden; closeMenus(); menu.hidden=!open; btn.setAttribute('aria-expanded',String(open)); editor.classList.toggle('tucked',open); if(open) menu.querySelector('button').focus(); });
 }
-function closeMenus(){ if(typeof closeRes==='function' && resKey) closeRes(); document.querySelectorAll('.menu').forEach(m=>m.hidden=true); document.querySelectorAll('[aria-haspopup]').forEach(b=>b.setAttribute('aria-expanded','false')); }
+function closeMenus(){ if(typeof closeRes==='function' && resKey) closeRes(); editor.classList.remove('tucked'); document.querySelectorAll('.menu').forEach(m=>m.hidden=true); document.querySelectorAll('[aria-haspopup]').forEach(b=>b.setAttribute('aria-expanded','false')); }
 wireMenu($('#dlBtn'),$('#dlMenu')); wireMenu($('#moreBtn'),$('#moreMenu'));
 document.addEventListener('click',e=>{
   if(!e.target.closest('.menuwrap')) closeMenus();
@@ -1299,7 +1300,7 @@ const EXAMPLE_AREAS=[
 ];
 function exampleState(){
   const e=blankState();
-  e.title='My Goals'; e.name='Sam Rivera'; e.sig='';
+  e.title='Sam’s Goals'; e.name='Sam Rivera'; e.sig='';
   e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
   return e;
 }
@@ -1350,7 +1351,7 @@ function shapeBox(sh){
 }
 const ring = key => () => sectorShape(0, RINGS[key].r0, RINGS[key].r1);
 const TOUR=[
-  {t:null, h:'Welcome to your Goal Wheel', p:'This is a happy map of your life. Let’s take a quick look at how it works. It only takes a minute.'},
+  {t:null, h:'Welcome to your Goal Wheel', p:'Let’s take a quick look at how it works. It only takes a minute.'},
   {t:ring('goals'), h:'Your GOALS', p:'The big outside ring is for your goals. Click on it, then type what you would love to have in this part of your life.'},
   {t:ring('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
   {t:ring('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
