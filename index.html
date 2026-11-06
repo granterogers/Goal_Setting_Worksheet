@@ -120,6 +120,10 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .frame img{max-width:100%;max-height:62dvh;border-radius:8px;display:block}
 .frame.has{border-style:solid;padding:6px}
 
+.exbox{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;padding:5px 12px 5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--field)}
+.exbox input{width:16px;height:16px;accent-color:var(--rose);margin:0;cursor:pointer}
+.exbox:has(input:checked){border-color:var(--rose)}
+.exbadge{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:2;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;box-shadow:var(--shadow);white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
 .pop #sigRemove{margin-top:8px}
@@ -162,6 +166,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
       <button data-theme="colour" aria-pressed="true">Colour</button>
       <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
     </div></div>
+  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> Show example</label>
   <div class="spacer"></div>
   <div class="actions">
     <button class="btn" id="tourBtn">Show me how</button>
@@ -189,6 +194,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 
 <main class="app">
   <div class="stage" id="stage">
+    <div class="exbadge" id="exBadge" hidden>This is an example wheel. Untick “Show example” to go back to yours.</div>
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
     <p class="hint" id="hint">Click any part of the wheel, the title, your name or the date to edit it. New here? Click “Show me how”.</p>
   </div>
@@ -369,7 +375,8 @@ function normalise(s){
 let state = blankState();
 try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)) state=normalise(s); } } catch(e){}
 let saveTimer=null;
-let persist = function(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
+let exampleOn = false, ownState = null;
+let persist = function(){ if(exampleOn) return; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
 
 let sel = {area:null, ring:null};
 let sigImg = null;           // uploaded signature picture, if any
@@ -795,6 +802,7 @@ canvas.addEventListener('mouseleave',()=>{ if(hover){ hover=null; schedule(); } 
 canvas.addEventListener('click',ev=>{
   const h=hitTest(ev);
   if(!h){ closePop(); return; }
+  if(exampleOn){ toast('This is an example. Untick “Show example” to edit your own wheel.'); return; }
   if(h.field){ openPop(h.field, ev.clientX, ev.clientY); return; }
   closePop();
   select(h.area, h.label ? null : h.ring, true);
@@ -982,14 +990,14 @@ $('#saveFile').addEventListener('click',()=>{
   download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), `${slug()}.json`); toast('Saved to file');
 });
 const fileIn=$('#fileIn');
-$('#openFile').addEventListener('click',()=>{ closeMenus(); fileIn.click(); });
+$('#openFile').addEventListener('click',()=>{ closeMenus(); setExample(false); fileIn.click(); });
 fileIn.addEventListener('change',async()=>{
   const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
   try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
   catch(e){ toast('That file isn’t a saved goal wheel'); }
 });
 $('#resetAll').addEventListener('click',()=>{
-  closeMenus();
+  closeMenus(); setExample(false);
   if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
   state=blankState(); loadSig(); persist(); syncToggles(); syncCollageUI(); select(null,null,false); relayout();
 });
@@ -1123,6 +1131,40 @@ $('#cOpen').addEventListener('click',()=>{ if(lastImage) window.open(lastImage.s
 const _persist=persist;
 persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
 
+// ---------- example wheel ----------
+const EXAMPLE_AREAS=[
+  ['Spiritual development','Meditate every morning\nSpend a weekend on retreat','Sit quietly for 10 minutes after waking','Calm and centred'],
+  ['Intimate relationships','More quality time together, with phones away','Book a weekly date night','Loved and close'],
+  ['Career','Start my own creative business','Sketch my business idea and talk to 3 people about it','Proud and free'],
+  ['Friends & family','See family every month and call friends more often','Call Mum on Sunday','Connected'],
+  ['Health','Run a 10k and sleep 8 hours a night','Go running twice a week','Strong and full of energy'],
+  ['Finance','Save for a trip around Japan','Set up a monthly savings transfer','Secure and excited'],
+  ['Hobbies','Learn to play the guitar','Practise for 15 minutes every day','Joyful'],
+];
+function exampleState(){
+  const e=blankState();
+  e.title='My Goals'; e.name='Sam Rivera'; e.sig='';
+  e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
+  return e;
+}
+const SHARED=['theme','preview','cStyle','cEngine'];
+function setExample(on){
+  if(on===exampleOn) return;
+  closePop(); closeMenus(); if(!editor.hidden) select(null,null,false);
+  if(on){
+    ownState=state; const e=exampleState();
+    SHARED.forEach(k=>e[k]=ownState[k]);
+    exampleOn=true; state=e;
+  } else {
+    SHARED.forEach(k=>ownState[k]=state[k]);
+    exampleOn=false; state=ownState; ownState=null; persist();
+  }
+  $('#exampleToggle').checked=on; $('#exBadge').hidden=!on;
+  lastImage=null; cFrame.innerHTML='Your collage appears here.'; cFrame.classList.remove('has'); cActions.hidden=true; setStatus('');
+  loadSig(); syncToggles(); syncCollageUI(); relayout();
+}
+$('#exampleToggle').addEventListener('change',e=>setExample(e.target.checked));
+
 // ---------- guided tour ----------
 const tourEl=$('#tour'), spot=$('#tourSpot'), bubble=$('#tourBubble');
 function elRect(sel){ const r=$(sel).getBoundingClientRect(); return {x:r.left,y:r.top,w:r.width,h:r.height}; }
@@ -1146,6 +1188,7 @@ const TOUR=[
   {t:fieldBox('date'), h:'The date', p:'Click the date to change it. Your poster reminds you to come back and update it in two weeks.'},
   {t:()=>elRect('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer or for printing. Pick Phone to make a tall picture for your phone.'},
   {t:()=>elRect('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elRect('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elRect('#dlBtn'), h:'Export', p:'When you are happy, click Export to save your wheel as a wallpaper for your computer or phone, or as a PDF to print and stick on your wall.'},
   {t:()=>elRect('#collageBtn'), h:'Generate AI collage', p:'Click here to turn your goals into a beautiful picture made by AI. You can use it as a wallpaper too.'},
   {t:()=>elRect('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
