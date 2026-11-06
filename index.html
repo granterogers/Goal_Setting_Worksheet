@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Figtree:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://js.puter.com/v2/" defer></script>
 <style>
 :root{
   color-scheme: light;
@@ -38,7 +37,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 
 /* top bar */
 .bar{flex:none;display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
-.brand{font:400 22px/1 var(--display);letter-spacing:.02em;margin-right:4px;white-space:nowrap}
+.brand{font:400 17px/1 var(--display);letter-spacing:.02em;margin-left:6px;white-space:nowrap;color:var(--muted)}
 .ver{font:600 11px/1 var(--sans);color:var(--muted);opacity:.75;letter-spacing:.03em;margin-left:4px;vertical-align:middle}
 .group{display:flex;align-items:center;gap:8px}
 .glabel{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
@@ -46,6 +45,18 @@ button,input,textarea,select{font:inherit;color:inherit}
 .seg button{border:0;background:none;padding:5px 13px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .spacer{flex:1}
+:root{--green:#2E9E62;--blue:#4063D8;--violet:#8A4FC9;--amber:#D98A12}
+.btn.go{background:var(--green);border-color:var(--green);color:#fff}
+.btn.go:hover{filter:brightness(1.07)}
+.seg.fmt{background:#EEF2FD;border-color:#CBD6F7}
+.seg.fmt button{color:var(--blue)}
+.seg.fmt button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.seg.col{background:#F4EEFB;border-color:#DCCDF0}
+.seg.col button{color:var(--violet)}
+.seg.col button[aria-pressed="true"]{background:var(--violet);color:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--green:#3DB874;--blue:#6E8BF0;--violet:#A97BE0;--amber:#EAA43A}
+  :root:not([data-theme="light"]) .seg.fmt{background:#1F2640;border-color:#33406A}
+  :root:not([data-theme="light"]) .seg.col{background:#2A2040;border-color:#45356A}}
 .actions{display:flex;gap:8px;align-items:center}
 .btn{border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 14px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--muted)}
@@ -70,9 +81,10 @@ button,input,textarea,select{font:inherit;color:inherit}
 .app{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px}
 .stage{flex:1;min-width:0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
 canvas#poster{display:block;border-radius:6px;box-shadow:var(--shadow);touch-action:manipulation}
-.hint{position:absolute;left:0;right:0;bottom:-2px;margin:0;text-align:center;font-size:12.5px;color:var(--muted);pointer-events:none}
 
 /* area editor */
+.editor[hidden]{display:block!important;visibility:hidden}
+@media (min-width:1500px){.app::before{content:'';flex:none;width:340px}}
 .editor{flex:none;width:340px;align-self:center;max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
 .area-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .swatch{width:14px;height:14px;border-radius:50%;flex:none}
@@ -122,8 +134,10 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .frame.has{border-style:solid;padding:6px}
 
 .exbox{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;padding:5px 12px 5px 9px;border:1px solid var(--line);border-radius:999px;background:var(--field)}
-.exbox input{width:16px;height:16px;accent-color:var(--rose);margin:0;cursor:pointer}
-.exbox:has(input:checked){border-color:var(--rose)}
+.exbox{color:var(--amber);border-color:#F0D6A8!important;background:#FDF5E7!important}
+.exbox input{width:16px;height:16px;accent-color:var(--amber);margin:0;cursor:pointer}
+.exbox:has(input:checked){border-color:var(--amber)!important}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .exbox{background:#33270F!important;border-color:#5E4718!important}}
 .exbadge{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:2;background:var(--ink);color:var(--bg);font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;box-shadow:var(--shadow);white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
 .split{display:inline-flex}
 .split #collageBtn{border-top-right-radius:0;border-bottom-right-radius:0}
@@ -145,19 +159,29 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 @media (prefers-reduced-motion: reduce){.spin{animation-duration:3s}}
 #collageDlg.phone.setopen .frame{height:min(36dvh,420px)}
 #collageDlg.desktop.setopen .frame{max-height:34dvh}
+.cwrap{display:flex;justify-content:center}
+#cCanvas{display:block;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.12);background:var(--field)}
+#collageDlg.desktop #cCanvas{width:100%;height:auto;max-height:60dvh;object-fit:contain}
+#collageDlg.phone #cCanvas{height:min(62dvh,760px);width:auto;max-width:100%}
+#collageDlg.phone.setopen #cCanvas{height:min(40dvh,460px)}
+#collageDlg.desktop.setopen #cCanvas{max-height:38dvh}
+.cprog{display:flex;align-items:center;gap:10px;min-height:20px}
+.cbar{flex:none;width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.cbar i{display:block;height:100%;width:0;background:var(--rose);transition:width .3s}
+.cprog .cstatus{margin:0}
 .csettings{border-top:1px solid var(--line);padding-top:12px}
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
 .pop #sigRemove{margin-top:8px}
 #tour{position:fixed;inset:0;z-index:70}
 .tour-block{position:absolute;inset:0}
-.tour-spot{position:fixed;border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(255,255,255,.95),0 0 0 9999px rgba(20,16,32,.58);transition:left .3s,top .3s,width .3s,height .3s}
+.tour-svg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 .tour-bubble{position:fixed;width:min(340px,92vw);background:var(--panel);color:var(--ink);border-radius:16px;padding:16px 16px 12px;box-shadow:var(--shadow);transition:left .3s,top .3s}
 .tour-bubble h3{font:400 21px/1.2 var(--display);margin:0 0 6px}
 .tour-bubble p{margin:0 0 12px;font-size:15px;line-height:1.5}
 .tour-count{font-size:12.5px!important;color:var(--muted);margin:0 0 4px!important;font-weight:600}
 .tour-bubble .row{gap:8px}
-@media (prefers-reduced-motion: reduce){.tour-spot,.tour-bubble{transition:none}}
+@media (prefers-reduced-motion: reduce){.tour-bubble{transition:none}}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;font-weight:500;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -167,6 +191,8 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   .brand{font-size:19px}
   .glabel{display:none}
   .app{padding:10px}
+  .editor[hidden]{display:none!important}
+  .app::before{display:none}
   .editor{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;max-height:58dvh;z-index:20}
   .dlg{grid-template-columns:1fr}
   .frame{min-height:180px}
@@ -177,30 +203,30 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <body>
 
 <header class="bar">
-  <div class="brand">Goal Wheel <span class="ver" id="appVer" title="Version"></span></div>
+  <button class="btn go" id="tourBtn">Getting started</button>
   <div class="group"><span class="glabel">Output format</span>
-    <div class="seg" id="fmtSeg" role="group" aria-label="Output format">
+    <div class="seg fmt" id="fmtSeg" role="group" aria-label="Output format">
       <button data-preview="desktop" aria-pressed="true">Desktop</button>
       <button data-preview="phone" aria-pressed="false">Phone</button>
     </div></div>
   <div class="group"><span class="glabel">Colours</span>
-    <div class="seg" id="colSeg" role="group" aria-label="Colours">
+    <div class="seg col" id="colSeg" role="group" aria-label="Colours">
       <button data-theme="colour" aria-pressed="true">Colour</button>
       <button data-theme="bw" aria-pressed="false">Black &amp; white</button>
     </div></div>
   <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> Show example</label>
   <div class="spacer"></div>
   <div class="actions">
-    <button class="btn" id="tourBtn">Show me how</button>
     <div class="menuwrap">
-      <button class="btn" id="dlBtn" aria-haspopup="true" aria-expanded="false">Export</button>
+      <button class="btn primary" id="dlBtn" aria-haspopup="true" aria-expanded="false">Export ▾</button>
       <div class="menu" id="dlMenu" hidden>
         <button data-dl="desktop">Desktop wallpaper <small>PNG</small></button>
         <button data-dl="phone">Phone wallpaper <small>PNG</small></button>
-        <button data-dl="pdf">PDF to print <small id="pdfHint">A4 landscape</small></button>
+        <hr>
+        <button data-dl="collage-desktop">Generate collage, desktop <small>AI</small></button>
+        <button data-dl="collage-phone">Generate collage, phone <small>AI</small></button>
       </div>
     </div>
-    <div class="split"><button class="btn primary" id="collageBtn">Generate AI collage</button><button class="btn primary gearbtn" id="collageCog" aria-label="Collage settings" title="Collage settings">⚙</button></div>
     <div class="menuwrap">
       <button class="btn icon" id="moreBtn" aria-label="More options" aria-haspopup="true" aria-expanded="false">⋯</button>
       <div class="menu" id="moreMenu" hidden>
@@ -210,6 +236,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
         <button id="resetAll">Start over with a blank wheel</button>
       </div>
     </div>
+    <div class="brand">Goal Wheel <span class="ver" id="appVer" title="Version"></span></div>
   </div>
   <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
 </header>
@@ -218,7 +245,6 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   <div class="stage" id="stage">
     <div class="exbadge" id="exBadge" hidden>This is an example wheel. Untick “Show example” to go back to yours.</div>
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
-    <p class="hint" id="hint">Click any part of the wheel, the title, your name or the date to edit it. New here? Click “Show me how”.</p>
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
@@ -257,50 +283,43 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   <div class="row"><button class="btn primary" id="fpDone">Done</button></div>
 </div>
 
-<dialog id="collageDlg" aria-label="AI collage">
+<dialog id="collageDlg" aria-label="AI goal collage">
   <div class="cdlg">
     <div class="dlghead">
-      <h2>Your AI collage</h2>
+      <h2 id="cTitle">Your goal collage</h2>
       <div class="row">
         <button class="x gear" id="cSettingsBtn" aria-label="Collage settings" aria-expanded="false" title="Collage settings">⚙</button>
         <button class="x" id="closeDlg" aria-label="Close">×</button>
       </div>
     </div>
-    <div class="frame" id="cFrame"></div>
-    <p class="cstatus" id="cStatus" aria-live="polite"></p>
-    <div class="row" id="cActions" hidden>
-      <button class="btn primary grow" id="cDownload">Download</button>
-      <button class="btn" id="cAgain">Make another</button>
+    <div class="cwrap"><canvas id="cCanvas" aria-label="Your goal collage"></canvas></div>
+    <div class="cprog"><span class="cbar"><i id="cBar"></i></span><span class="cstatus" id="cStatus" aria-live="polite"></span></div>
+    <div class="row" id="cActions">
+      <button class="btn primary grow" id="cDownload" disabled>Download</button>
+      <button class="btn" id="cAgain">Make a new one</button>
     </div>
     <div class="csettings" id="cSettings" hidden>
-      <label class="inp"><span>Style</span>
+      <label class="inp"><span>Picture style</span>
         <select id="cStyle">
-          <option value="board">Vision board collage</option>
-          <option value="watercolour">Watercolour illustration</option>
-          <option value="photo">Dreamlike photo montage</option>
-          <option value="ethereal">Soft, glowing painting</option>
+          <option value="board">Bright magazine photos</option>
+          <option value="photo">Dreamy cinematic photos</option>
+          <option value="watercolour">Watercolour paintings</option>
+          <option value="ethereal">Soft, glowing art</option>
         </select></label>
-      <label class="inp"><span>Image description <button type="button" class="link" id="cRebuild">Rebuild from my goals</button></span>
-        <textarea id="cPrompt" rows="7"></textarea></label>
-      <label class="inp"><span>Image generator</span>
-        <select id="cEngine">
-          <option value="flux">Standard (one click, no sign-in)</option>
-          <option value="gpt">GPT Image 2 (higher quality, free Puter sign-in)</option>
-          <option value="nano">Nano Banana Pro (free Puter sign-in)</option>
-        </select></label>
-      <p class="note" id="cNote"></p>
-      <div class="row" style="margin-top:10px">
-        <button class="btn primary" id="cGo">Create with these settings</button>
-        <button class="btn" id="cCopy">Copy description</button>
-        <button class="btn" id="cChatGPT">Open in ChatGPT</button>
-      </div>
+      <label class="inp"><span>Extra words for every picture (optional)</span>
+        <textarea id="cExtra" rows="2" placeholder="For example: warm sunset light, a woman in her thirties, by the sea"></textarea></label>
+      <p class="note">Changes are used when you click “Make a new one”.</p>
     </div>
   </div>
-</dialog>
+</dialog></dialog>
 
 <div id="tour" hidden>
   <div class="tour-block"></div>
-  <div class="tour-spot" id="tourSpot"></div>
+  <svg class="tour-svg" id="tourSvg" aria-hidden="true">
+    <defs><mask id="tourMask"><rect x="0" y="0" width="100%" height="100%" fill="#fff"/><path id="tourCut" fill="#000"/></mask></defs>
+    <rect x="0" y="0" width="100%" height="100%" fill="rgba(20,16,32,.6)" mask="url(#tourMask)"/>
+    <path id="tourLine" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  </svg>
   <div class="tour-bubble" id="tourBubble" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
     <p class="tour-count" id="tourCount"></p>
     <h3 id="tourTitle"></h3>
@@ -314,7 +333,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.5';
+const APP_VERSION = 'v1.6';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -372,7 +391,7 @@ const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTi
 function blankState(){
   return {
     v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
-    cStyle:'board', cEngine:'flux', cGenV:2, cPrompt:'', cEdited:false,
+    cStyle:'board', cExtra:'',
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
 }
@@ -386,8 +405,7 @@ function normalise(s){
   out.areas = s.areas.map((a,i)=>({name:String(a.name).slice(0,40), c:Number.isInteger(a.c)?a.c%PALETTE.length:i%PALETTE.length,
     goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
   if(typeof out.sig!=='string' || !out.sig.startsWith('data:image/')) out.sig='';
-  if(s.cGenV!==2){ out.cEngine='flux'; out.cGenV=2; }
-  if(!['flux','gpt','nano'].includes(out.cEngine)) out.cEngine='flux';
+  if(typeof out.cExtra!=='string') out.cExtra='';
   if(!THEMES[out.theme]) out.theme='colour';
   if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
   return out;
@@ -778,12 +796,12 @@ function legendHeight(u,maxW,rowGap){
 
 // ---------- on-screen canvas ----------
 const $=s=>document.querySelector(s);
-const canvas=$('#poster'), ctx=canvas.getContext('2d'), stage=$('#stage'), hint=$('#hint');
+const canvas=$('#poster'), ctx=canvas.getContext('2d'), stage=$('#stage');
 const PREVIEW={desktop:[297,210], phone:[1290,2796]};     // shape of the on-screen poster
 const EXPORT={desktop:[3840,2160], phone:[1290,2796]};    // wallpaper pixel sizes
 function sizeCanvas(){
   const [pw,ph]=PREVIEW[state.preview], ar=pw/ph;
-  const availW=stage.clientWidth, availH=stage.clientHeight-(hint.offsetHeight+8);
+  const availW=stage.clientWidth, availH=stage.clientHeight-4;
   let w=availW, h=w/ar;
   if(h>availH){ h=availH; w=h*ar; }
   w=Math.max(120,w); h=Math.max(120,h);
@@ -848,7 +866,7 @@ function select(area, ring, focus){
       if(ring) target.setSelectionRange(target.value.length,target.value.length); else areaName.select();
     }
   }
-  if(wasOpen!==!editor.hidden) relayout(); else schedule();
+  schedule();
 }
 tas.forEach((t,i)=>{
   t.addEventListener('input',()=>{ if(sel.area===null) return; state.areas[sel.area][t.dataset.ring]=t.value; persist(); schedule(); });
@@ -954,7 +972,6 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeMenus(); clo
 function syncToggles(){
   document.querySelectorAll('[data-preview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.preview===state.preview)));
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===state.theme)));
-  $('#pdfHint').textContent = state.preview==='desktop' ? 'A4 landscape' : 'A4 portrait';
 }
 document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{
   if(state.preview===b.dataset.preview) return;
@@ -1001,7 +1018,7 @@ async function exportPDF(){
 }
 document.querySelectorAll('[data-dl]').forEach(b=>b.addEventListener('click',()=>{
   closeMenus(); const k=b.dataset.dl;
-  if(k==='pdf') exportPDF(); else exportPNG(k);
+  if(k.startsWith('collage-')) openCollage(k.slice(8)); else exportPNG(k);
 }));
 
 // ---------- more menu: areas, save / open / reset ----------
@@ -1025,149 +1042,170 @@ $('#resetAll').addEventListener('click',()=>{
 let toastT=0;
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
 
-// ---------- AI collage ----------
-const STYLES = {
-  board: 'a tactile, mixed-media vision board: layered photographs, torn paper edges, pressed flowers and botanical details, soft film grain, arranged with an artful, curated, editorial feel',
-  watercolour: 'luminous watercolour and gouache illustration with soft bleeding edges, delicate ink linework, gentle gradients and visible paper texture',
-  photo: 'a seamless photographic montage with cinematic natural light and shallow depth of field, each scene blending softly into the next like a dream',
-  ethereal: 'ethereal, painterly digital art with soft glowing light, gentle mist, iridescent highlights and a serene, uplifting atmosphere',
+// ---------- AI collage: one picture per goal, arranged as a vision board ----------
+// Optional free publishable key from enter.pollinations.ai. Without it, the free anonymous service is used (slow).
+const POLLEN_KEY = '';
+const STYLE_WORDS = {
+  board: 'A bright, joyful, high-quality editorial photograph, like a page from a beautiful magazine',
+  photo: 'A dreamy, cinematic photograph with soft golden light and gentle depth of field',
+  watercolour: 'A luminous watercolour painting with soft edges and gentle colours',
+  ethereal: 'Soft, glowing, painterly digital art with a serene, uplifting atmosphere',
 };
-const ENGINE_NOTES = {
-  flux: 'One click, no account needed. You can make a new picture about every 15 seconds.',
-  gpt: 'Sharper, more detailed pictures. The first time, a pop-up asks you to sign in to Puter or make a free account. Pictures use your own Puter allowance.',
-  nano: 'The first time, a pop-up asks you to sign in to Puter or make a free account. Pictures use your own Puter allowance.',
-};
-const dlg=$('#collageDlg'), cPrompt=$('#cPrompt'), cStyle=$('#cStyle'), cEngine=$('#cEngine'), cStatus=$('#cStatus'),
-      cFrame=$('#cFrame'), cActions=$('#cActions'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn');
-const clean = t => t.replace(/\s*\n+\s*/g,'; ').replace(/\s+/g,' ').trim().replace(/[;.,\s]+$/,'');
-function buildPrompt(){
-  const parts = state.areas.map(a=>{
-    const g=clean(a.goals), f=clean(a.feel), st=clean(a.steps);
-    if(!g && !f && !st) return null;
-    const name=a.name.trim()||'Another part of life';
-    let line=`${name}: ${g || st}.`;
-    if(f) line+=` Feeling: ${f}.`;
-    return line;
+const dlg=$('#collageDlg'), cCanvas=$('#cCanvas'), cctx=cCanvas.getContext('2d'), cStatus=$('#cStatus'), cBar=$('#cBar'),
+      cStyle=$('#cStyle'), cExtra=$('#cExtra'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn'), cDownload=$('#cDownload');
+const COLLAGE_SIZE={desktop:[3840,2160], phone:[1290,2796]};
+const firstLine = t => t.split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,2).join(' and ').replace(/\s+/g,' ').slice(0,180);
+function sceneList(){
+  return state.areas.map(a=>{
+    const goal=firstLine(a.goals) || firstLine(a.steps);
+    if(!goal) return null;
+    return {name:a.name.trim()||'', hue:PALETTE[a.c], goal, feel:firstLine(a.feel)};
   }).filter(Boolean);
-  if(!parts.length) return '';
-  const fmt = state.preview==='desktop' ? 'a wide 16:9 landscape desktop wallpaper' : 'a tall 9:19.5 portrait phone wallpaper';
-  const phoneNote = state.preview==='phone' ? ' Keep the top fifth of the image calm and simple so a lock-screen clock stays readable.' : '';
-  return `A beautiful, high-end goal collage celebrating a joyful, balanced and fulfilled life, composed as one cohesive artwork for ${fmt}. `+
-    `At the centre, a softly glowing heart radiates warm light that gently connects every scene. Around it, harmonious vignettes flow into one another, each showing one area of life as already achieved and deeply felt:\n\n`+
-    parts.join('\n')+
-    `\n\nStyle: ${STYLES[state.cStyle]}. A rich but harmonious colour palette, cohesive lighting across all scenes, depth and texture, elegant breathing space, uplifting and heartfelt, highly detailed, premium quality.${phoneNote} `+
-    `No text, no words, no letters, no numbers, no logos and no watermarks anywhere in the image.`;
 }
-function syncPrompt(force){
-  if(force || !state.cEdited){ state.cPrompt=buildPrompt(); state.cEdited=false; }
-  if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt;
-  cPrompt.placeholder='Write some goals on the wheel and a description appears here.';
+function scenePrompt(sc){
+  let p=`${STYLE_WORDS[state.cStyle]} showing a person happily living this dream: "${sc.goal}".`;
+  if(sc.feel) p+=` The mood is ${sc.feel.toLowerCase()}.`;
+  if(state.cExtra.trim()) p+=` ${state.cExtra.trim()}.`;
+  return p+' Beautiful composition, rich detail, natural light. No text, no words, no letters, no logos, no watermark.';
 }
-function syncCollageUI(){
-  cStyle.value=state.cStyle; cEngine.value=state.cEngine;
-  $('#cNote').textContent=ENGINE_NOTES[state.cEngine];
-  dlg.classList.toggle('desktop', state.preview==='desktop'); dlg.classList.toggle('phone', state.preview==='phone');
-  $('#cDownload').textContent = state.preview==='desktop' ? 'Download desktop wallpaper' : 'Download phone wallpaper';
-  syncPrompt(false);
+// grid of polaroid-style frames
+function collageLayout(W,H,n,format){
+  let cols, rows;
+  if(format==='phone'){ cols = n<=4 ? 1 : 2; if(n>8) cols=3; rows=Math.ceil(n/cols); }
+  else { rows = n<=4 ? 1 : n<=8 ? 2 : 3; cols=Math.ceil(n/rows); }
+  const top = format==='phone' ? H*.2 : H*.05, bottom = format==='phone' ? H*.06 : H*.05, side=W*.05;
+  const cw=(W-side*2)/cols, ch=(H-top-bottom)/rows, cells=[];
+  for(let r=0;r<rows;r++){
+    const inRow=Math.min(cols, n-r*cols), off=(cols-inRow)*cw/2;
+    for(let c=0;c<inRow;c++) cells.push({x:side+off+c*cw, y:top+r*ch, w:cw, h:ch});
+  }
+  return cells;
+}
+function frameGeom(cell,i){
+  const m=Math.min(cell.w,cell.h)*.07, fw=cell.w-m*2, fh=cell.h-m*2;
+  const pad=Math.min(fw,fh)*.045, cap=Math.min(fw,fh)*.15;
+  const pw=fw-pad*2, ph=fh-pad-cap;
+  const rot=((i*37)%7-3)*.012;   // gentle, varied tilt
+  return {cx:cell.x+cell.w/2, cy:cell.y+cell.h/2, fw, fh, pad, cap, pw, ph, rot};
+}
+function drawCollage(ctx,W,H,format,scenes,imgs){
+  const T=THEMES[state.theme];
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.hypot(W,H)/2);
+  g.addColorStop(0, state.theme==='bw' ? '#FFFFFF' : '#FBF9FE'); g.addColorStop(1, state.theme==='bw' ? '#E9E9E9' : '#E7E1F2');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const cells=collageLayout(W,H,scenes.length,format);
+  scenes.forEach((sc,i)=>{
+    const f=frameGeom(cells[i],i);
+    ctx.save(); ctx.translate(f.cx,f.cy); ctx.rotate(f.rot);
+    ctx.shadowColor='rgba(30,20,50,.28)'; ctx.shadowBlur=f.fw*.05; ctx.shadowOffsetY=f.fw*.015;
+    ctx.fillStyle='#FFFFFF'; ctx.fillRect(-f.fw/2,-f.fh/2,f.fw,f.fh);
+    ctx.shadowColor='transparent';
+    const px=-f.fw/2+f.pad, py=-f.fh/2+f.pad, im=imgs[i];
+    if(im && im.naturalWidth){
+      const s=Math.max(f.pw/im.naturalWidth, f.ph/im.naturalHeight), sw=f.pw/s, sh=f.ph/s;
+      ctx.drawImage(im,(im.naturalWidth-sw)/2,(im.naturalHeight-sh)/2,sw,sh,px,py,f.pw,f.ph);
+    } else {
+      ctx.fillStyle=mix(sc.hue,'#FFFFFF',.72); ctx.fillRect(px,py,f.pw,f.ph);
+      ctx.fillStyle=mix(sc.hue,'#1B1630',.4); ctx.globalAlpha=.6; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font=`500 ${f.ph*.07}px ${F.ui.fam}`; ctx.fillText(im===false ? 'Picture unavailable' : 'Painting…', px+f.pw/2, py+f.ph/2); ctx.globalAlpha=1;
+    }
+    const label=sc.name || sc.goal;
+    let fs=f.cap*.62; ctx.font=`600 ${fs}px ${F.sign.fam}`;
+    while(fs>f.cap*.3 && ctx.measureText(label).width>f.pw){ fs*=.94; ctx.font=`600 ${fs}px ${F.sign.fam}`; }
+    ctx.fillStyle=state.theme==='bw' ? '#222' : mix(sc.hue,'#1B1630',.45); ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label, 0, f.fh/2-f.cap/2);
+    ctx.restore();
+  });
 }
 function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
-let lastImage=null, fluxReadyAt=0, busy=false, genToken=0;
-function resetCollage(){
-  lastImage=null; cFrame.classList.remove('has'); cActions.hidden=true; setStatus('');
-  cFrame.textContent='Your collage appears here.';
+let cJob=0, cFormat='desktop', cScenes=[], cImgs=[], cTainted=false, cBusy=false;
+function redrawCollage(){ const [W,H]=COLLAGE_SIZE[cFormat]; drawCollage(cctx,W,H,cFormat,cScenes,cImgs); }
+function sceneSize(format,n){
+  const [W,H]=COLLAGE_SIZE[format], f=frameGeom(collageLayout(W,H,n,format)[0],0);
+  const scale=1024/Math.max(f.pw,f.ph);   // ask for about 1024px on the long side
+  const r16=v=>Math.max(256,Math.round(v*scale/16)*16);
+  return [r16(f.pw), r16(f.ph)];
 }
-function showSettings(open){ cSettings.hidden=!open; cSettingsBtn.setAttribute('aria-expanded',String(open)); dlg.classList.toggle('setopen',open); }
-function openCollage(withSettings){
-  closeMenus(); closePop(); syncCollageUI();
-  if(lastImage && lastImage.format!==state.preview) resetCollage();
-  showSettings(!!withSettings);
-  if(!dlg.open) dlg.showModal();
-}
-$('#collageBtn').addEventListener('click',()=>{ openCollage(false); if(!busy) generate(); });
-$('#collageCog').addEventListener('click',()=>openCollage(true));
-cSettingsBtn.addEventListener('click',()=>showSettings(cSettings.hidden));
-$('#closeDlg').addEventListener('click',()=>dlg.close());
-dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
-cPrompt.addEventListener('input',()=>{ state.cPrompt=cPrompt.value; state.cEdited=true; persist(); });
-$('#cRebuild').addEventListener('click',()=>{ syncPrompt(true); cPrompt.value=state.cPrompt; persist(); toast('Description rebuilt from your goals'); });
-cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; if(state.cEdited) toast('Use “Rebuild from my goals” to apply the new style to your edited description.'); syncPrompt(false); persist(); });
-cEngine.addEventListener('change',()=>{ state.cEngine=cEngine.value; syncCollageUI(); persist(); });
-$('#cGo').addEventListener('click',()=>{ if(!busy) generate(); });
-$('#cAgain').addEventListener('click',()=>{ if(!busy) generate(); });
-
-async function genPuter(prompt){
-  if(!window.puter) throw {code:'no_puter'};
-  if(!puter.auth.isSignedIn()) await puter.auth.signIn();
-  const ratio = state.preview==='desktop' ? {w:16,h:9} : {w:9,h:19.5};
-  const opts = state.cEngine==='gpt' ? {model:'gpt-image-2', quality:'high', ratio} : {model:'gemini-3-pro-image', quality:'2K', ratio};
-  const img = await puter.ai.txt2img(prompt, opts);
-  return img.src;
-}
-function genFlux(prompt){
-  const [w,h] = state.preview==='desktop' ? [1920,1080] : [1088,2352];
-  const short = prompt.length>1500 ? prompt.slice(0,1500) : prompt;
-  const url=`https://image.pollinations.ai/prompt/${encodeURIComponent(short)}?width=${w}&height=${h}&model=flux&nologo=true&seed=${Math.floor(Math.random()*1e9)}`;
+function loadImage(url, cors){
   return new Promise((res,rej)=>{
-    const im=new Image(); const t=setTimeout(()=>{ im.src=''; rej({code:'flux_timeout'}); },120000);
-    im.onload=()=>{ clearTimeout(t); res(url); }; im.onerror=()=>{ clearTimeout(t); rej({code:'flux_failed'}); };
+    const im=new Image(); if(cors) im.crossOrigin='anonymous';
+    const t=setTimeout(()=>{ im.src=''; rej(new Error('timeout')); },150000);
+    im.onload=()=>{ clearTimeout(t); res(im); }; im.onerror=()=>{ clearTimeout(t); rej(new Error('failed')); };
     im.src=url;
   });
 }
-async function generate(){
-  const prompt=(state.cPrompt||buildPrompt()).trim();
-  if(!prompt){ resetCollage(); setStatus('Write at least one goal on the wheel first, then try again.',true); return; }
-  if(state.cEngine==='flux' && Date.now()<fluxReadyAt){
-    setStatus(`You can make a new picture in ${Math.ceil((fluxReadyAt-Date.now())/1000)} seconds.`,true); return;
+function sceneUrl(prompt,w,h,seed){
+  const q=`width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`;
+  return POLLEN_KEY
+    ? `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${q}&key=${encodeURIComponent(POLLEN_KEY)}`
+    : `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?${q}`;
+}
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+async function fetchScene(i,w,h,seed,job){
+  const url=sceneUrl(scenePrompt(cScenes[i]),w,h,seed+i);
+  for(let attempt=0; attempt<2; attempt++){
+    try{ return await loadImage(url,true); }
+    catch(e){
+      if(job!==cJob) return null;
+      try{ const im=await loadImage(url,false); cTainted=true; return im; }   // shows, but can't be saved as one file
+      catch(_){ if(attempt===0) await wait(POLLEN_KEY ? 3000 : 46000); }
+    }
   }
-  const token=++genToken; busy=true;
-  cActions.hidden=true; cFrame.classList.remove('has');
-  cFrame.innerHTML='<div class="spin" aria-hidden="true"></div><div>Creating your collage…</div>';
-  setStatus(state.cEngine==='flux' ? 'This usually takes 10 to 40 seconds.' : 'This can take up to a minute.');
-  try{
-    const src = state.cEngine==='flux' ? await genFlux(prompt) : await genPuter(prompt);
-    if(token!==genToken) return;
-    if(state.cEngine==='flux') fluxReadyAt=Date.now()+15000;
-    lastImage={src, format:state.preview};
-    cFrame.innerHTML=''; const im=new Image(); im.alt='Your AI goal collage'; im.src=src; cFrame.append(im); cFrame.classList.add('has');
-    cActions.hidden=false; setStatus('');
-  }catch(e){
-    if(token!==genToken) return;
-    const code = e && (e.errorCode || e.code || (e.error && e.error.code));
-    let msg;
-    if(code==='flux_failed'||code==='flux_timeout') msg='The picture couldn’t be made just now. Wait a few seconds and click Make another.';
-    else if(code==='no_puter') msg='The Puter service didn’t load. Reload the page, or choose Standard in the settings (cog).';
-    else if(code==='insufficient_funds') msg='Your free Puter allowance has run out for now. Choose Standard in the settings (cog).';
-    else if(code==='moderation_flagged') msg='The picture service declined this description. Try changing the words in the settings (cog).';
-    else if(e && /sign|auth|popup|cancel/i.test(String(e.message||e))) msg='Sign-in was cancelled. Choose Standard in the settings (cog) to skip signing in.';
-    else msg='The picture couldn’t be made. '+((e && e.message) ? e.message : 'Try again in a moment.');
-    cFrame.textContent='No picture yet.'; cActions.hidden=false; setStatus(msg,true);
-  }finally{ if(token===genToken) busy=false; }
+  return false;
 }
-async function copyText(t){
-  try{ await navigator.clipboard.writeText(t); return true; }
-  catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.append(ta); ta.select(); let ok=false; try{ ok=document.execCommand('copy'); }catch(_){} ta.remove(); return ok; }
+async function runCollage(){
+  const job=++cJob; cBusy=true; cTainted=false;
+  cScenes=sceneList();
+  const [W,H]=COLLAGE_SIZE[cFormat]; cCanvas.width=W; cCanvas.height=H;
+  cDownload.disabled=true;
+  if(!cScenes.length){ cImgs=[]; redrawCollage(); cBar.style.width='0'; setStatus('Write at least one goal on the wheel first, then try again.',true); cBusy=false; return; }
+  cImgs=cScenes.map(()=>null); redrawCollage();
+  const [w,h]=sceneSize(cFormat,cScenes.length), seed=Math.floor(Math.random()*1e8);
+  const n=cScenes.length; let done=0;
+  const update=()=>{ cBar.style.width=(done/n*100)+'%';
+    setStatus(done<n ? `Painting picture ${Math.min(done+1,n)} of ${n}…${POLLEN_KEY?'':' The free service makes about one picture a minute.'}` : ''); };
+  update();
+  const concurrency = POLLEN_KEY ? 3 : 1; let next=0;
+  async function worker(){
+    while(next<n && job===cJob){
+      const i=next++;
+      if(!POLLEN_KEY && i>0) await wait(46000);
+      const im=await fetchScene(i,w,h,seed,job);
+      if(job!==cJob) return;
+      cImgs[i]=im; done++; redrawCollage(); update();
+    }
+  }
+  await Promise.all(Array.from({length:concurrency},worker));
+  if(job!==cJob) return;
+  cBusy=false;
+  const failed=cImgs.filter(x=>x===false).length;
+  if(failed===n){ setStatus('The picture service didn’t respond. Please try again in a few minutes.',true); return; }
+  cDownload.disabled=false;
+  setStatus(failed ? `${failed} picture${failed>1?'s':''} couldn’t be made. Click “Make a new one” to try again.` : 'Your collage is ready.', !!failed);
 }
-const currentPrompt=()=>{ const p=(cPrompt.value||'').trim(); if(!p) setStatus('Write at least one goal on the wheel first.',true); return p; };
-$('#cCopy').addEventListener('click',async()=>{ const p=currentPrompt(); if(!p) return; toast(await copyText(p)?'Description copied':'Select the description and copy it manually'); });
-$('#cChatGPT').addEventListener('click',async()=>{
-  const p=currentPrompt(); if(!p) return;
-  const full='Please create this image. '+p;
-  await copyText(full);
-  window.open('https://chatgpt.com/?q='+encodeURIComponent(full),'_blank','noopener');
-  toast('Opened ChatGPT. The description is also copied.');
+function syncCollageUI(){ cStyle.value=state.cStyle; cExtra.value=state.cExtra; }
+function showSettings(open){ cSettings.hidden=!open; cSettingsBtn.setAttribute('aria-expanded',String(open)); dlg.classList.toggle('setopen',open); }
+function openCollage(format){
+  closeMenus(); closePop(); syncCollageUI(); showSettings(false);
+  cFormat=format; dlg.classList.toggle('desktop',format==='desktop'); dlg.classList.toggle('phone',format==='phone');
+  $('#cTitle').textContent = format==='desktop' ? 'Your goal collage: desktop' : 'Your goal collage: phone';
+  cDownload.textContent = format==='desktop' ? 'Download desktop collage' : 'Download phone collage';
+  if(!dlg.open) dlg.showModal();
+  fontsReady().then(runCollage);
+}
+function resetCollage(){ cJob++; cBusy=false; cImgs=[]; cScenes=[]; }
+cSettingsBtn.addEventListener('click',()=>showSettings(cSettings.hidden));
+$('#closeDlg').addEventListener('click',()=>dlg.close());
+dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
+dlg.addEventListener('close',()=>{ cJob++; cBusy=false; });
+cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; persist(); });
+cExtra.addEventListener('input',()=>{ state.cExtra=cExtra.value; persist(); });
+$('#cAgain').addEventListener('click',()=>{ showSettings(false); runCollage(); });
+cDownload.addEventListener('click',()=>{
+  if(cTainted){ toast('Your browser blocked saving this collage. Right-click it and choose “Save image as”.'); return; }
+  try{ cCanvas.toBlob(b=>{ if(!b){ toast('The collage couldn’t be saved.'); return; } download(b,`${slug()}-collage-${cFormat}.png`); toast('Downloaded your collage'); },'image/png'); }
+  catch(e){ toast('Your browser blocked saving this collage. Right-click it and choose “Save image as”.'); }
 });
-$('#cDownload').addEventListener('click',async()=>{
-  if(!lastImage) return;
-  const name=`${slug()}-collage-${lastImage.format==='desktop'?'desktop-landscape':'phone-portrait'}`;
-  try{
-    const r=await fetch(lastImage.src); if(!r.ok) throw 0;
-    const b=await r.blob(); const ext=(b.type.split('/')[1]||'png').replace('jpeg','jpg');
-    download(b,`${name}.${ext}`); toast('Downloaded your collage');
-  }catch(e){ window.open(lastImage.src,'_blank','noopener'); toast('Opened full size. Right-click or long-press to save it.'); }
-});
-// keep the automatic description in step with the wheel
-const _persist=persist;
-persist=function(){ _persist(); if(!state.cEdited){ state.cPrompt=buildPrompt(); if(document.activeElement!==cPrompt) cPrompt.value=state.cPrompt; } };
 
 // ---------- example wheel ----------
 const EXAMPLE_AREAS=[
@@ -1185,7 +1223,7 @@ function exampleState(){
   e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
   return e;
 }
-const SHARED=['theme','preview','cStyle','cEngine'];
+const SHARED=['theme','preview','cStyle','cExtra'];
 function setExample(on){
   if(on===exampleOn) return;
   closePop(); closeMenus(); if(!editor.hidden) select(null,null,false);
@@ -1204,53 +1242,71 @@ function setExample(on){
 $('#exampleToggle').addEventListener('change',e=>setExample(e.target.checked));
 
 // ---------- guided tour ----------
-const tourEl=$('#tour'), spot=$('#tourSpot'), bubble=$('#tourBubble');
-function elRect(sel){ const r=$(sel).getBoundingClientRect(); return {x:r.left,y:r.top,w:r.width,h:r.height}; }
-function canvasToClient(b){ const r=canvas.getBoundingClientRect(), k=r.width/canvas.width; return {x:r.left+b.x*k, y:r.top+b.y*k, w:b.w*k, h:b.h*k}; }
-function sectorBox(area,r0,r1){
-  const n=state.areas.length, span=2*Math.PI/n, a0=area*span, a1=a0+span; let xs=[],ys=[];
-  for(let t=0;t<=12;t++){ const a=a0+(a1-a0)*t/12; for(const r of [r0,r1]){ const [x,y]=pt(geo.cx,geo.cy,r*geo.R,a); xs.push(x); ys.push(y); } }
-  const x=Math.min(...xs), y=Math.min(...ys); return canvasToClient({x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y});
+const tourEl=$('#tour'), bubble=$('#tourBubble'), tourCut=$('#tourCut'), tourLine=$('#tourLine');
+// Shapes are in screen pixels. rect: {x,y,w,h}; sector: {cx,cy,r0,r1,a0,a1}; circle: {cx,cy,r}
+function elShape(sel){ const r=$(sel).getBoundingClientRect(), p=6; return {kind:'rect', x:r.left-p, y:r.top-p, w:r.width+p*2, h:r.height+p*2}; }
+function canvasScale(){ const r=canvas.getBoundingClientRect(); return {r, k:r.width/canvas.width}; }
+function sectorShape(area,f0,f1){
+  const {r,k}=canvasScale(), n=state.areas.length, span=2*Math.PI/n;
+  return {kind:'sector', cx:r.left+geo.cx*k, cy:r.top+geo.cy*k, r0:f0*geo.R*k, r1:f1*geo.R*k, a0:area*span, a1:(area+1)*span};
 }
-const ringBox = ring => () => sectorBox(0, RINGS[ring].r0, RINGS[ring].r1);
-const fieldBox = k => () => geo.rects[k] ? canvasToClient(geo.rects[k]) : null;
+function wheelShape(){ const {r,k}=canvasScale(); return {kind:'circle', cx:r.left+geo.cx*k, cy:r.top+geo.cy*k, r:geo.R*k*1.02}; }
+function fieldShape(key){ const b=geo.rects[key]; if(!b) return null; const {r,k}=canvasScale(), p=8;
+  return {kind:'rect', x:r.left+b.x*k-p, y:r.top+b.y*k-p, w:b.w*k+p*2, h:b.h*k+p*2}; }
+const P=(cx,cy,r,a)=>[cx+r*Math.sin(a), cy-r*Math.cos(a)];
+function shapePath(sh){
+  if(sh.kind==='rect'){ const {x,y,w,h}=sh, q=Math.min(12,w/2,h/2);
+    return `M${x+q},${y}H${x+w-q}Q${x+w},${y} ${x+w},${y+q}V${y+h-q}Q${x+w},${y+h} ${x+w-q},${y+h}H${x+q}Q${x},${y+h} ${x},${y+h-q}V${y+q}Q${x},${y} ${x+q},${y}Z`; }
+  if(sh.kind==='circle'){ const {cx,cy,r}=sh; return `M${cx-r},${cy}A${r},${r} 0 1 0 ${cx+r},${cy}A${r},${r} 0 1 0 ${cx-r},${cy}Z`; }
+  const {cx,cy,r0,r1,a0,a1}=sh, large=(a1-a0)>Math.PI?1:0;
+  const [x1,y1]=P(cx,cy,r1,a0), [x2,y2]=P(cx,cy,r1,a1), [x3,y3]=P(cx,cy,r0,a1), [x4,y4]=P(cx,cy,r0,a0);
+  return `M${x1},${y1}A${r1},${r1} 0 ${large} 1 ${x2},${y2}L${x3},${y3}A${r0},${r0} 0 ${large} 0 ${x4},${y4}Z`;
+}
+function shapeBox(sh){
+  if(sh.kind==='rect') return {x:sh.x,y:sh.y,w:sh.w,h:sh.h};
+  if(sh.kind==='circle') return {x:sh.cx-sh.r,y:sh.cy-sh.r,w:sh.r*2,h:sh.r*2};
+  const xs=[],ys=[]; for(let t=0;t<=16;t++){ const a=sh.a0+(sh.a1-sh.a0)*t/16; for(const r of [sh.r0,sh.r1]){ const [x,y]=P(sh.cx,sh.cy,r,a); xs.push(x); ys.push(y);} }
+  const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y};
+}
+const ring = key => () => sectorShape(0, RINGS[key].r0, RINGS[key].r1);
 const TOUR=[
   {t:null, h:'Welcome to your Goal Wheel', p:'This is a happy map of your life. Let’s take a quick look at how it works. It only takes a minute.'},
-  {t:ringBox('goals'), h:'Your GOALS', p:'The big outside ring is for your goals. Click on it, then type what you would love to have in this part of your life.'},
-  {t:ringBox('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
-  {t:ringBox('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
-  {t:()=>sectorBox(0,1.0,1.17), h:'Life areas', p:'Each slice is one part of your life. Click the name to change it to anything you like.'},
-  {t:()=>canvasToClient({x:geo.cx-geo.R,y:geo.cy-geo.R,w:geo.R*2,h:geo.R*2}), h:'Typing in a slice', p:'When you click a slice, a little box opens. Press Enter to jump to the next ring, and click Next area to move around the wheel. Click Done when you finish.'},
-  {t:fieldBox('title'), h:'The title', p:'Click the title to change it.'},
-  {t:fieldBox('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
-  {t:fieldBox('date'), h:'The date', p:'Click the date to change it. Your poster reminds you to come back and update it in two weeks.'},
-  {t:()=>elRect('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer or for printing. Pick Phone to make a tall picture for your phone.'},
-  {t:()=>elRect('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
-  {t:()=>elRect('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
-  {t:()=>elRect('#dlBtn'), h:'Export', p:'When you are happy, click Export to save your wheel as a wallpaper for your computer or phone, or as a PDF to print and stick on your wall.'},
-  {t:()=>elRect('.split'), h:'Generate AI collage', p:'Click here once and AI turns your goals into a beautiful picture you can download as a wallpaper. The little cog lets you change the style or the words used to make it.'},
-  {t:()=>elRect('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
-  {t:()=>elRect('#tourBtn'), h:'That’s it!', p:'Click Show me how any time to see this tour again. Have fun dreaming big!'},
+  {t:ring('goals'), h:'Your GOALS', p:'The big outside ring is for your goals. Click on it, then type what you would love to have in this part of your life.'},
+  {t:ring('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
+  {t:ring('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
+  {t:()=>sectorShape(0,1.0,1.17), h:'Life areas', p:'Each slice is one part of your life. Click the name to change it to anything you like.'},
+  {t:wheelShape, h:'Typing in a slice', p:'When you click a slice, a little box opens on the right. Press Enter to jump to the next ring, and click Next area to move around the wheel. Click Done when you finish.'},
+  {t:()=>fieldShape('title'), h:'The title', p:'Click the title to change it.'},
+  {t:()=>fieldShape('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
+  {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it. Your poster reminds you to come back and update it in two weeks.'},
+  {t:()=>elShape('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
+  {t:()=>elShape('#colSeg'), h:'Colours', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elShape('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
+  {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
+  {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
+  {t:()=>elShape('#tourBtn'), h:'That’s it!', p:'Click Getting started any time to see this tour again. Have fun dreaming big!'},
 ];
 let tourIdx=0;
 function placeTour(){
-  const step=TOUR[tourIdx]; let r=null;
-  try{ r=step.t ? step.t() : null; }catch(e){ r=null; }
-  const pad=8, vw=window.innerWidth, vh=window.innerHeight;
-  if(r){ spot.style.left=(r.x-pad)+'px'; spot.style.top=(r.y-pad)+'px'; spot.style.width=(r.w+pad*2)+'px'; spot.style.height=(r.h+pad*2)+'px'; }
-  else { spot.style.left=(vw/2)+'px'; spot.style.top=(vh/2)+'px'; spot.style.width='0px'; spot.style.height='0px'; }
+  const step=TOUR[tourIdx]; let sh=null;
+  try{ sh=step.t ? step.t() : null; }catch(e){ sh=null; }
+  const d = sh ? shapePath(sh) : '';
+  tourCut.setAttribute('d',d); tourLine.setAttribute('d',d);
   $('#tourCount').textContent=`Step ${tourIdx+1} of ${TOUR.length}`;
   $('#tourTitle').textContent=step.h; $('#tourText').textContent=step.p;
   $('#tourBack').disabled = tourIdx===0;
   $('#tourNext').textContent = tourIdx===TOUR.length-1 ? 'Finish' : 'Next';
-  const bw=bubble.offsetWidth, bh=bubble.offsetHeight, gap=16;
+  const vw=window.innerWidth, vh=window.innerHeight, bw=bubble.offsetWidth, bh=bubble.offsetHeight, gap=14;
   let bx, by;
-  if(!r){ bx=(vw-bw)/2; by=(vh-bh)/2; }
-  else if(r.y+r.h+pad+gap+bh < vh-8){ bx=r.x+r.w/2-bw/2; by=r.y+r.h+pad+gap; }
-  else if(r.y-pad-gap-bh > 8){ bx=r.x+r.w/2-bw/2; by=r.y-pad-gap-bh; }
-  else if(r.x+r.w+pad+gap+bw < vw-8){ bx=r.x+r.w+pad+gap; by=r.y+r.h/2-bh/2; }
-  else if(r.x-pad-gap-bw > 8){ bx=r.x-pad-gap-bw; by=r.y+r.h/2-bh/2; }
-  else { bx=(vw-bw)/2; by=vh-bh-12; }
+  if(!sh){ bx=(vw-bw)/2; by=(vh-bh)/2; }
+  else {
+    const r=shapeBox(sh);
+    if(r.y+r.h+gap+bh < vh-8){ bx=r.x+r.w/2-bw/2; by=r.y+r.h+gap; }
+    else if(r.y-gap-bh > 8){ bx=r.x+r.w/2-bw/2; by=r.y-gap-bh; }
+    else if(r.x+r.w+gap+bw < vw-8){ bx=r.x+r.w+gap; by=r.y+r.h/2-bh/2; }
+    else if(r.x-gap-bw > 8){ bx=r.x-gap-bw; by=r.y+r.h/2-bh/2; }
+    else { bx=(vw-bw)/2; by=vh-bh-12; }
+  }
   bubble.style.left=Math.max(8,Math.min(vw-bw-8,bx))+'px'; bubble.style.top=Math.max(8,Math.min(vh-bh-8,by))+'px';
 }
 function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); if(!editor.hidden) select(null,null,false); hover=null; render(); tourIdx=0; tourEl.hidden=false; placeTour(); $('#tourNext').focus(); }

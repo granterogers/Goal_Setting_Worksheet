@@ -2,6 +2,14 @@
 
 The current version is shown next to "Goal Wheel" in the top bar.
 
+## v1.6
+- "Getting started" (green) replaces "Show me how" and sits far left, followed by Output format, Colours and Show example
+- Colour-coded toolbar controls
+- The poster no longer moves when the section editor opens
+- Tour highlights each part of the wheel in its own arc shape
+- AI collage rebuilt: one picture per goal, arranged as a polaroid-style collage, generated from the Export menu (desktop or phone)
+- Removed the PDF export, the separate collage button and the hint text under the poster
+
 ## v1.5
 - Generate AI collage is now one click: no sign-in, the picture appears with a Download button for desktop (landscape) or phone (portrait)
 - New cog next to the button (and in the collage window) for style, wording and generator settings
