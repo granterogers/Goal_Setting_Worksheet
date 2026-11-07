@@ -2,6 +2,16 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.12
+- New phone interface (desktop unchanged):
+  - "Fill in" view: a close-up of the current slice that turns as you move around the wheel, with one text box at a time
+  - Goals / Steps / Feelings tabs, Next and Back, ‹ › to change area, swipe the wheel to jump between areas, tap a ring to go straight to it
+  - "Whole poster" view shows everything at a glance; tapping a slice jumps back to filling it in
+  - Title, signature and date links under the card
+  - Output format and colour choices moved into the ⋯ menu on phones
+  - First-time phone visitors start with the Phone output format
+- Tour adapts to phone or desktop
+
 ## v1.11
 - Exported files are named after the person (signed name, or the name in a title like "Maria’s Goals") and include the size, e.g. grant-rogers-goal-wheel-desktop-1920x1080.png
 - Export and ⋯ menus sit slightly lower, with a gap below the top bar

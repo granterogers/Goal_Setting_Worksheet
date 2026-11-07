@@ -207,15 +207,46 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
+.mview,.mfill,.mopts{display:none}
 @media (max-width:860px){
-  .bar{padding:8px 10px;gap:8px}
-  .brand{font-size:19px}
-  .glabel{display:none}
-  .app{padding:10px}
-  .editor[hidden]{display:none!important}
-  .editor{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;max-height:58dvh;z-index:20}
+  body{height:var(--vvh,100dvh)}
+  .bar{padding:8px 10px;gap:8px;flex-wrap:nowrap}
+  .bar .group,#colSeg,.hide-m{display:none}
+  .bar .btn{padding:7px 11px}
+  .exbox{padding:5px 10px 5px 8px}
+  .menu{min-width:min(330px,calc(100vw - 20px))}
+  .mopts{display:block}
+  .mopts .seg{margin:0 6px 6px}
+  .app{flex-direction:column;align-items:stretch;padding:8px;gap:8px}
+  .editor,.editor[hidden]{display:none!important}
+  .mview{display:flex;align-self:center;flex:none}
+  .mview button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .app.mv-fill .stage{display:none}
+  .app.mv-poster .mfill{display:none}
+  .stage{flex:1 1 auto}
+  .mfill{display:flex;flex:1;min-height:0;flex-direction:column;gap:8px}
+  #focusCv{flex:1 1 auto;min-height:110px;width:100%;border-radius:14px;touch-action:pan-y}
+  .mcard{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 12px 8px;box-shadow:var(--shadow)}
+  .mhead{display:flex;align-items:center;gap:8px}
+  .mnavb{flex:none;width:40px;height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-size:24px;line-height:1;cursor:pointer;color:var(--ink)}
+  #mName{flex:1;min-width:0;border:0;border-bottom:1.5px solid var(--line);background:none;font:400 19px/1.2 var(--display);padding:2px 0 3px;border-radius:0}
+  #mName:focus{outline:none;border-bottom-color:var(--focus)}
+  .mcount{flex:none;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .mtabs{display:flex;gap:4px;margin:10px 0 8px;background:var(--field);border-radius:12px;padding:3px}
+  .mtabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px 4px;font-weight:700;font-size:13.5px;letter-spacing:.04em;color:var(--muted);cursor:pointer}
+  .mtabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  #mText{display:block;width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:12px;padding:9px 11px;font-size:16px;line-height:1.4;resize:none}
+  #mText:focus{outline:none;border-color:var(--focus)}
+  #mMeter{margin:4px 2px 0}
+  .mnote{margin:6px 2px 0;font-size:13px;color:var(--muted)}
+  .mnav{display:flex;gap:8px;margin-top:8px}
+  .mnav .btn{padding:10px 14px;font-size:15px}
+  .mdet{margin-top:8px;font-size:12.5px;color:var(--muted);text-align:center}
+  .mdet .link{font-size:12.5px}
+  .app.typing .mview{display:none}
+  .app.typing #focusCv{flex-basis:0;min-height:90px}
   .dlg{grid-template-columns:1fr}
-  .frame{min-height:180px}
+  .brand{display:none}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
@@ -224,7 +255,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 
 <header class="bar">
   <button class="btn go" id="tourBtn">✓ Get started</button>
-  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> Show example</label>
+  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> <span class="hide-m">Show&nbsp;</span>example</label>
   <div class="spacer"></div>
   <div class="group"><span class="glabel">Output format</span>
     <div class="seg fmt" id="fmtSeg" role="group" aria-label="Output format">
@@ -250,6 +281,13 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
     <div class="menuwrap">
       <button class="btn icon" id="moreBtn" aria-label="More options" aria-haspopup="true" aria-expanded="false">⋯</button>
       <div class="menu" id="moreMenu" hidden>
+        <div class="mopts">
+          <p class="rtitle">Output format</p>
+          <div class="seg fmt" role="group" aria-label="Output format"><button data-preview="desktop" aria-pressed="true">Desktop</button><button data-preview="phone" aria-pressed="false">Phone</button></div>
+          <p class="rtitle">Colours</p>
+          <div class="seg col" role="group" aria-label="Colours"><button data-theme="colour" aria-pressed="true">Colour</button><button data-theme="bw" aria-pressed="false">Black &amp; white</button></div>
+          <hr>
+        </div>
         <button id="saveFile">Save to file</button>
         <button id="openFile">Open a saved file</button>
         <hr>
@@ -260,7 +298,36 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   <input type="file" id="fileIn" accept="application/json,.json" class="sr" tabindex="-1">
 </header>
 
-<main class="app">
+<main class="app mv-fill" id="app">
+  <div class="mview seg" id="mView" role="group" aria-label="View">
+    <button data-mv="fill" aria-pressed="true">Fill in</button>
+    <button data-mv="poster" aria-pressed="false">Whole poster</button>
+  </div>
+  <div class="mfill" id="mFill">
+    <canvas id="focusCv" aria-label="Close-up of the current life area"></canvas>
+    <div class="mcard">
+      <div class="mhead">
+        <button class="mnavb" id="mPrevArea" aria-label="Previous life area">‹</button>
+        <span class="swatch" id="mSwatch"></span>
+        <input id="mName" aria-label="Life area name" maxlength="40">
+        <span class="mcount" id="mCount"></span>
+        <button class="mnavb" id="mNextArea" aria-label="Next life area">›</button>
+      </div>
+      <div class="mtabs" role="tablist" aria-label="Ring">
+        <button role="tab" data-mring="goals">Goals</button>
+        <button role="tab" data-mring="steps">Steps</button>
+        <button role="tab" data-mring="feel">Feelings</button>
+      </div>
+      <textarea id="mText" rows="3"></textarea>
+      <span class="meter" id="mMeter"><span><i></i></span><em></em></span>
+      <p class="mnote" id="mNote" hidden>This is an example. Untick “example” at the top to fill in your own.</p>
+      <div class="mnav">
+        <button class="btn" id="mBack">Back</button>
+        <button class="btn primary grow" id="mFwd">Next</button>
+      </div>
+      <div class="mdet">Also edit: <button class="link" data-f="title">Title</button> · <button class="link" data-f="name">Signature</button> · <button class="link" data-f="date">Date</button></div>
+    </div>
+  </div>
   <div class="stage" id="stage">
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
   </div>
@@ -355,7 +422,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.11';
+const APP_VERSION = 'v1.12';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -435,8 +502,8 @@ function normalise(s){
   if(!['desktop','phone'].includes(out.preview)) out.preview='desktop';
   return out;
 }
-let state = blankState();
-try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)) state=normalise(s); } } catch(e){}
+let state = blankState(), firstVisit = true;
+try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)){ state=normalise(s); firstVisit=false; } } } catch(e){}
 let saveTimer=null;
 let exampleOn = false, ownState = null;
 let persist = function(){ if(exampleOn) return; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
@@ -587,7 +654,7 @@ function capsule(ctx,x,y,w,h){
 }
 
 // ---------- wheel ----------
-function drawWheel(ctx,cx,cy,R,T,interactive){
+function drawWheel(ctx,cx,cy,R,T,interactive,rot=0){
   const n=state.areas.length, span=2*Math.PI/n;
   const fits={};
   // soft halo (colour only)
@@ -639,7 +706,8 @@ function drawWheel(ctx,cx,cy,R,T,interactive){
   // texts
   state.areas.forEach((a,i)=>{
     const hue=PALETTE[a.c], thC=(i+.5)*span;
-    const flip = thC>Math.PI/2+1e-6 && thC<3*Math.PI/2-1e-6;
+    const va=((thC+rot)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);   // angle as seen on screen
+    const flip = va>Math.PI/2+1e-6 && va<3*Math.PI/2-1e-6;
     RING_ORDER.forEach(ring=>{
       const txt=(a[ring]||'').trim();
       if(!txt){
@@ -839,6 +907,10 @@ function sizeCanvas(){
   const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight), padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
   const mobile=window.matchMedia('(max-width:860px)').matches;
   const edW = mobile ? 0 : $('#editor').offsetWidth + 16;
+  if(mobile){ const r=stage.getBoundingClientRect(); if(r.width<10){ return; }
+    const [pw2,ph2]=previewShape(state.preview), ar2=pw2/ph2; let w2=r.width, h2=w2/ar2; if(h2>r.height){ h2=r.height; w2=h2*ar2; }
+    const d2=Math.min(Math.max(window.devicePixelRatio||1,2),3); stage.style.flex='1 1 auto';
+    canvas.style.width=Math.floor(w2)+'px'; canvas.style.height=Math.floor(h2)+'px'; canvas.width=Math.round(w2*d2); canvas.height=Math.round(h2*d2); return; }
   const [pw,ph]=previewShape(state.preview), ar=pw/ph;
   const availW=app.clientWidth-padX-edW, availH=app.clientHeight-padY;
   let w=availW, h=w/ar;
@@ -852,6 +924,7 @@ function sizeCanvas(){
 function render(){
   geo=drawLayout(ctx,canvas.width,canvas.height,state.preview,true);
   fitInfo=geo.fits; updateMeters();
+  if(mqMobile.matches && typeof mSync==='function'){ mSync(); renderFocus(); }
 }
 let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
 const relayout=()=>{ sizeCanvas(); render(); };
@@ -880,6 +953,7 @@ canvas.addEventListener('mouseleave',()=>{ if(hover){ hover=null; schedule(); } 
 canvas.addEventListener('click',ev=>{
   const h=hitTest(ev);
   if(!h){ closePop(); return; }
+  if(mqMobile.matches && !h.field){ closePop(); setMView('fill'); select(h.area, h.label ? null : h.ring, false); return; }
   if(exampleOn){ toast('This is an example. Untick “Show example” to edit your own wheel.'); return; }
   if(h.field){ openPop(h.field, ev.clientX, ev.clientY); return; }
   closePop();
@@ -893,6 +967,7 @@ function setActiveField(ring){ document.querySelectorAll('.field').forEach(f=>f.
 const mqMobile=window.matchMedia('(max-width:860px)');
 function defaultArea(){ const i=state.areas.findIndex(a=>a.c===6); return i>=0 ? i : state.areas.length-1; }
 function select(area, ring, focus){
+  if(mqMobile.matches){ mSelect(area, ring, focus); return; }
   if(exampleOn){ sel={area:null,ring:null}; editor.classList.add('locked'); editor.hidden=mqMobile.matches; schedule(); return; }
   editor.classList.remove('locked');
   if(area===null && !mqMobile.matches){ area=defaultArea(); ring='goals'; focus=false; }
@@ -940,6 +1015,121 @@ function updateMeters(){
     i.style.width=(w*100)+'%'; i.style.background=col; em.textContent=msg;
   });
 }
+
+// ---------- mobile: guided "Fill in" view ----------
+const appEl=$('#app'), focusCv=$('#focusCv'), fctx=focusCv.getContext('2d');
+const mText=$('#mText'), mName=$('#mName');
+let mvMode='fill', focusRot=0, rotAnim=0;
+const RING_LABEL={goals:'One or more goals in this area', steps:'Steps I can take in the next 2 weeks', feel:'How I’ll feel with this goal achieved'};
+const angOf = area => (area+.5)*2*Math.PI/state.areas.length;
+function setMView(v){
+  mvMode=v; appEl.classList.toggle('mv-fill',v==='fill'); appEl.classList.toggle('mv-poster',v==='poster');
+  document.querySelectorAll('[data-mv]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mv===v)));
+  requestAnimationFrame(relayout);
+}
+document.querySelectorAll('[data-mv]').forEach(b=>b.addEventListener('click',()=>setMView(b.dataset.mv)));
+function spinTo(area){
+  const target=-angOf(area);
+  let d=target-focusRot; d=((d+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;   // shortest way round
+  const from=focusRot, to=from+d, t0=performance.now(), dur=matchMedia('(prefers-reduced-motion: reduce)').matches?0:380;
+  cancelAnimationFrame(rotAnim);
+  const step=now=>{ const k=dur?Math.min(1,(now-t0)/dur):1, e=1-Math.pow(1-k,3); focusRot=from+(to-from)*e; renderFocus(); if(k<1) rotAnim=requestAnimationFrame(step); };
+  rotAnim=requestAnimationFrame(step);
+}
+let fgeo=null;
+function renderFocus(){
+  if(!mqMobile.matches || mvMode!=='fill') return;
+  const r=focusCv.getBoundingClientRect(); if(r.width<10||r.height<10) return;
+  const dpr=Math.min(Math.max(window.devicePixelRatio||1,2),3), W=Math.round(r.width*dpr), H=Math.round(r.height*dpr);
+  if(focusCv.width!==W||focusCv.height!==H){ focusCv.width=W; focusCv.height=H; }
+  const T=THEMES[state.theme], n=state.areas.length, half=Math.PI/n;
+  fctx.fillStyle=T.bg; fctx.fillRect(0,0,W,H);
+  const pad=8*dpr;
+  const R=Math.min((H-pad)/(1.19-0.12), (W*.97)/(2*1.19*Math.sin(Math.min(half*1.25,Math.PI/2))));
+  const cx=W/2, cy=pad+1.19*R;
+  fctx.save(); fctx.translate(cx,cy); fctx.rotate(focusRot); fctx.translate(-cx,-cy);
+  drawWheel(fctx,cx,cy,R,T,true,focusRot);
+  fctx.restore();
+  fgeo={cx,cy,R,dpr};
+}
+function focusHit(ev){
+  if(!fgeo) return null;
+  const r=focusCv.getBoundingClientRect(), x=(ev.clientX-r.left)*fgeo.dpr, y=(ev.clientY-r.top)*fgeo.dpr;
+  const dx=x-fgeo.cx, dy=y-fgeo.cy, d=Math.hypot(dx,dy)/fgeo.R;
+  let th=Math.atan2(dx,-dy)-focusRot; th=((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  const n=state.areas.length, area=Math.min(n-1,Math.floor(th/(2*Math.PI/n)));
+  for(const ring of RING_ORDER){ const rr=RINGS[ring]; if(d>=rr.r0 && d<rr.r1) return {area,ring}; }
+  if(d>=1 && d<1.2) return {area,label:true};
+  return null;
+}
+let swipe=null;
+focusCv.addEventListener('pointerdown',e=>{ swipe={x:e.clientX,y:e.clientY,t:Date.now()}; });
+focusCv.addEventListener('pointerup',e=>{
+  if(!swipe) return; const dx=e.clientX-swipe.x, dy=e.clientY-swipe.y; const s0=swipe; swipe=null;
+  const n=state.areas.length;
+  if(Math.abs(dx)>45 && Math.abs(dx)>Math.abs(dy)*1.3){ mSelect((sel.area+(dx<0?1:-1)+n)%n, sel.ring||'goals', false); return; }
+  if(Math.abs(dx)<10 && Math.abs(dy)<10){ const h=focusHit(e); if(h) mSelect(h.area, h.label?null:h.ring, !!h.label); }
+});
+function mSelect(area, ring, focusName){
+  const n=state.areas.length;
+  if(area===null || area===undefined) area = (sel.area!==null && sel.area<n) ? sel.area : 0;
+  if(!ring) ring = sel.ring || 'goals';
+  sel={area, ring}; editor.hidden=true;
+  mSync(); spinTo(area); schedule();
+  if(focusName && !exampleOn){ mName.focus(); mName.select(); }
+}
+function mSync(){
+  if(sel.area===null) return;
+  const n=state.areas.length, a=state.areas[sel.area];
+  $('#mSwatch').style.background=PALETTE[a.c];
+  if(document.activeElement!==mName) mName.value=a.name;
+  $('#mCount').textContent=`${sel.area+1} / ${n}`;
+  document.querySelectorAll('[data-mring]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mring===sel.ring)));
+  if(document.activeElement!==mText) mText.value=a[sel.ring]||'';
+  mText.placeholder=RING_LABEL[sel.ring];
+  mText.readOnly=exampleOn; mName.readOnly=exampleOn; $('#mNote').hidden=!exampleOn;
+  const last = sel.area===n-1 && sel.ring==='feel', first = sel.area===0 && sel.ring==='goals';
+  $('#mFwd').textContent = last ? 'See my poster' : 'Next';
+  $('#mBack').disabled = first;
+  mMeter();
+}
+function mMeter(){
+  const i=$('#mMeter i'), em=$('#mMeter em'), info=sel.area!==null ? fitInfo[sel.area+':'+sel.ring] : null;
+  if(!info){ i.style.width='0'; em.textContent=''; return; }
+  const r=info.ratio; let w=Math.max(.08,Math.min(1,r)), col='var(--good)', msg='Fits comfortably';
+  if(info.truncated){ col='var(--bad)'; msg='Too long to fit, try shortening'; w=.08; }
+  else if(r<.42){ col='var(--bad)'; msg='Very small, consider shortening'; }
+  else if(r<.68){ col='var(--warn)'; msg='Getting small'; }
+  i.style.width=(w*100)+'%'; i.style.background=col; em.textContent=msg;
+}
+function mStep(dir){
+  const n=state.areas.length, idx=RING_ORDER.indexOf(sel.ring);
+  if(dir>0){
+    if(idx<2) return mSelect(sel.area, RING_ORDER[idx+1], false);
+    if(sel.area<n-1) return mSelect(sel.area+1,'goals',false);
+    mText.blur(); setMView('poster'); toast('Here’s your poster. Tap Export to save it.');
+  } else {
+    if(idx>0) return mSelect(sel.area, RING_ORDER[idx-1], false);
+    if(sel.area>0) return mSelect(sel.area-1,'feel',false);
+  }
+}
+$('#mFwd').addEventListener('click',()=>{ const typing=document.activeElement===mText; mStep(1); if(typing && mvMode==='fill') mText.focus(); });
+$('#mBack').addEventListener('click',()=>mStep(-1));
+$('#mPrevArea').addEventListener('click',()=>{ const n=state.areas.length; mSelect((sel.area-1+n)%n, sel.ring, false); });
+$('#mNextArea').addEventListener('click',()=>{ const n=state.areas.length; mSelect((sel.area+1)%n, sel.ring, false); });
+document.querySelectorAll('[data-mring]').forEach(b=>b.addEventListener('click',()=>mSelect(sel.area,b.dataset.mring,false)));
+mText.addEventListener('input',()=>{ if(sel.area===null||exampleOn) return; state.areas[sel.area][sel.ring]=mText.value; persist(); schedule(); });
+mText.addEventListener('keydown',e=>{ if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); mStep(1); } });
+mText.addEventListener('focus',()=>{ appEl.classList.add('typing'); requestAnimationFrame(relayout); });
+mText.addEventListener('blur',()=>{ appEl.classList.remove('typing'); requestAnimationFrame(relayout); });
+mName.addEventListener('input',()=>{ if(sel.area===null||exampleOn) return; state.areas[sel.area].name=mName.value; persist(); schedule(); });
+mName.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); mText.focus(); } });
+document.querySelectorAll('.mdet [data-f]').forEach(b=>b.addEventListener('click',e=>{
+  if(exampleOn){ toast('This is an example. Untick “example” to edit your own wheel.'); return; }
+  const r=b.getBoundingClientRect(); e.stopPropagation(); openPop(b.dataset.f, window.innerWidth/2, Math.max(70, r.top-260));
+}));
+// keep the layout above the on-screen keyboard
+if(window.visualViewport){ const vv=window.visualViewport; const fit=()=>{ document.documentElement.style.setProperty('--vvh', vv.height+'px'); if(mqMobile.matches) window.scrollTo(0,0); }; vv.addEventListener('resize',fit); fit(); }
 
 // ---------- poster detail popover (title, name, date) ----------
 const pop=$('#fieldPop'), fpInput=$('#fpInput'), fpLabel=$('#fpLabel');
@@ -1369,27 +1559,29 @@ const TOUR=[
   {t:ring('steps'), h:'Your STEPS', p:'The middle ring is for small steps you can take in the next two weeks to get closer to your goal.'},
   {t:ring('feel'), h:'Your FEELINGS', p:'The inside ring, next to the heart, is for how you will feel when your goal comes true. Happy? Free? Proud?'},
   {t:()=>sectorShape(0,1.0,1.17), h:'Life areas', p:'Each slice is one part of your life. Click the name to change it to anything you like.'},
-  {t:wheelShape, h:'Typing in a slice', p:'Click any slice and type in the box on the right. Press Enter to jump to the next ring, and Enter again to move to the next part of your life.'},
+  {t:wheelShape, m:false, h:'Typing in a slice', p:'Click any slice and type in the box on the right. Press Enter to jump to the next ring, and Enter again to move to the next part of your life.'},
+  {t:()=>elShape('#mView'), d:false, h:'Fill in, one slice at a time', p:'Tap “Fill in” to write in your wheel slice by slice. The wheel turns to show you where you are. Tap Next to move on, or swipe the wheel to jump to another part of your life. “Whole poster” shows everything at once.'},
   {t:()=>fieldShape('title'), h:'The title', p:'Click the title to change it.'},
   {t:()=>fieldShape('name'), h:'Sign your name', p:'Click here to sign. You can type your name, or upload a photo of your real signature.'},
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
-  {t:()=>elShape('#fmtSeg'), h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
-  {t:()=>elShape('#colSeg'), h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elShape('#fmtSeg'), m:false, h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
+  {t:()=>elShape('#colSeg'), m:false, h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
   {t:()=>elShape('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
+  {t:()=>elShape('#moreBtn'), d:false, h:'Desktop or phone, colour or not', p:'This menu also lets you choose a desktop or phone poster, and colour or black and white.'},
   {t:()=>elShape('#tourBtn'), h:'That’s it!', p:'Click Get started any time to see this tour again. Have fun dreaming big!'},
 ];
-let tourIdx=0;
+let tourIdx=0, activeTour=TOUR;
 function placeTour(){
-  const step=TOUR[tourIdx]; let sh=null;
+  const step=activeTour[tourIdx]; let sh=null;
   try{ sh=step.t ? step.t() : null; }catch(e){ sh=null; }
   const d = sh ? shapePath(sh) : '';
   tourCut.setAttribute('d',d); tourLine.setAttribute('d',d);
-  $('#tourCount').textContent=`Step ${tourIdx+1} of ${TOUR.length}`;
+  $('#tourCount').textContent=`Step ${tourIdx+1} of ${activeTour.length}`;
   $('#tourTitle').textContent=step.h; $('#tourText').textContent=step.p;
   $('#tourBack').disabled = tourIdx===0;
-  $('#tourNext').textContent = tourIdx===TOUR.length-1 ? 'Finish' : 'Next';
+  $('#tourNext').textContent = tourIdx===activeTour.length-1 ? 'Finish' : 'Next';
   const vw=window.innerWidth, vh=window.innerHeight, bw=bubble.offsetWidth, bh=bubble.offsetHeight, gap=14;
   let bx, by;
   if(!sh){ bx=(vw-bw)/2; by=(vh-bh)/2; }
@@ -1403,10 +1595,11 @@ function placeTour(){
   }
   bubble.style.left=Math.max(8,Math.min(vw-bw-8,bx))+'px'; bubble.style.top=Math.max(8,Math.min(vh-bh-8,by))+'px';
 }
-function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); if(!editor.hidden) select(null,null,false); hover=null; render(); tourIdx=0; tourEl.hidden=false; placeTour(); $('#tourNext').focus(); }
+function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); if(mqMobile.matches){ setMView('poster'); } else if(!editor.hidden) select(null,null,false); hover=null; render();
+  const mob=mqMobile.matches; activeTour=TOUR.filter(st=> mob ? st.m!==false : st.d!==false); tourIdx=0; tourEl.hidden=false; placeTour(); $('#tourNext').focus(); }
 function endTour(){ tourEl.hidden=true; $('#tourBtn').focus(); }
 $('#tourBtn').addEventListener('click',startTour);
-$('#tourNext').addEventListener('click',()=>{ if(tourIdx<TOUR.length-1){ tourIdx++; placeTour(); } else endTour(); });
+$('#tourNext').addEventListener('click',()=>{ if(tourIdx<activeTour.length-1){ tourIdx++; placeTour(); } else endTour(); });
 $('#tourBack').addEventListener('click',()=>{ if(tourIdx>0){ tourIdx--; placeTour(); } });
 $('#tourSkip').addEventListener('click',endTour);
 document.addEventListener('keydown',e=>{ if(tourEl.hidden) return;
@@ -1417,8 +1610,8 @@ window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(
 $('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
 loadSig();
-syncToggles(); syncCollageUI(); syncResLabels(); select(null,null,false); relayout();
-mqMobile.addEventListener('change',()=>select(mqMobile.matches?null:sel.area, mqMobile.matches?null:(sel.ring||'goals'), false));
+syncToggles(); syncCollageUI(); syncResLabels(); if(mqMobile.matches){ sel={area:0,ring:'goals'}; if(firstVisit) state.preview='phone'; } syncToggles(); select(null,null,false); relayout();
+mqMobile.addEventListener('change',()=>{ select(sel.area, sel.ring||'goals', false); relayout(); });
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
 window.__goalWheel={get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
 })();
