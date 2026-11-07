@@ -2,6 +2,11 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.13
+- Dedicated phone tour (12 steps) covering the close-up wheel, area arrows, ring tabs, text box, Next/Back, title/signature/date, Whole poster, example, Export and More
+- Goals, Steps and Feelings colour-coded (blue, orange, pink) on phone tabs and text box, and on the desktop editor labels
+- Phone buttons coloured: area arrows match the area colour, Next is green, Fill in / Whole poster switch is blue
+
 ## v1.12
 - New phone interface (desktop unchanged):
   - "Fill in" view: a close-up of the current slice that turns as you move around the wheel, with one text box at a time

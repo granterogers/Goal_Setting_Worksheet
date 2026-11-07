@@ -45,7 +45,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .seg button{border:0;background:none;padding:5px 13px;border-radius:999px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .spacer{flex:1}
-:root{--green:#2E9E62;--blue:#4063D8;--violet:#8A4FC9;--amber:#D98A12}
+:root{--green:#2E9E62;--blue:#4063D8;--violet:#8A4FC9;--amber:#D98A12;--ring-goals:#3B6FD8;--ring-steps:#D98A12;--ring-feel:#D9457B}
 .btn.go{background:var(--green);border-color:var(--green);color:#fff}
 .btn.go:hover{filter:brightness(1.07)}
 .seg.fmt{background:#EEF2FD;border-color:#CBD6F7}
@@ -115,6 +115,8 @@ canvas#poster{display:block;border-radius:6px;box-shadow:var(--shadow);touch-act
 .x:hover{background:var(--field);color:var(--ink)}
 .field{display:block;margin-bottom:8px;border-radius:11px;padding:8px 10px 6px;border:1.5px solid transparent;background:var(--field)}
 .field.active{border-color:var(--focus)}
+.field[data-ring="goals"] b{color:var(--ring-goals)} .field[data-ring="steps"] b{color:var(--ring-steps)} .field[data-ring="feel"] b{color:var(--ring-feel)}
+.field[data-ring="goals"].active{border-color:var(--ring-goals)} .field[data-ring="steps"].active{border-color:var(--ring-steps)} .field[data-ring="feel"].active{border-color:var(--ring-feel)}
 .field .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .field b{font-size:13.5px}
 .field small{color:var(--muted);font-size:12px}
@@ -220,7 +222,6 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   .app{flex-direction:column;align-items:stretch;padding:8px;gap:8px}
   .editor,.editor[hidden]{display:none!important}
   .mview{display:flex;align-self:center;flex:none}
-  .mview button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
   .app.mv-fill .stage{display:none}
   .app.mv-poster .mfill{display:none}
   .stage{flex:1 1 auto}
@@ -234,7 +235,18 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   .mcount{flex:none;font-size:12.5px;font-weight:600;color:var(--muted)}
   .mtabs{display:flex;gap:4px;margin:10px 0 8px;background:var(--field);border-radius:12px;padding:3px}
   .mtabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px 4px;font-weight:700;font-size:13.5px;letter-spacing:.04em;color:var(--muted);cursor:pointer}
-  .mtabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  .mtabs button[data-mring="goals"]{color:var(--ring-goals)} .mtabs button[data-mring="steps"]{color:var(--ring-steps)} .mtabs button[data-mring="feel"]{color:var(--ring-feel)}
+  .mtabs button[aria-selected="true"]{color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .mtabs button[data-mring="goals"][aria-selected="true"]{background:var(--ring-goals)}
+  .mtabs button[data-mring="steps"][aria-selected="true"]{background:var(--ring-steps)}
+  .mtabs button[data-mring="feel"][aria-selected="true"]{background:var(--ring-feel)}
+  .mcard[data-ring="goals"] #mText{border-color:color-mix(in srgb,var(--ring-goals) 45%,transparent)}
+  .mcard[data-ring="steps"] #mText{border-color:color-mix(in srgb,var(--ring-steps) 45%,transparent)}
+  .mcard[data-ring="feel"] #mText{border-color:color-mix(in srgb,var(--ring-feel) 45%,transparent)}
+  .mcard[data-ring="goals"] #mText:focus{border-color:var(--ring-goals)} .mcard[data-ring="steps"] #mText:focus{border-color:var(--ring-steps)} .mcard[data-ring="feel"] #mText:focus{border-color:var(--ring-feel)}
+  .mview button[data-mv][aria-pressed="true"]{background:var(--blue);color:#fff}
+  .mview button{color:var(--blue)}
+  .mview.seg{background:#EEF2FD;border-color:#CBD6F7}
   #mText{display:block;width:100%;border:1.5px solid var(--line);background:var(--field);border-radius:12px;padding:9px 11px;font-size:16px;line-height:1.4;resize:none}
   #mText:focus{outline:none;border-color:var(--focus)}
   #mMeter{margin:4px 2px 0}
@@ -323,7 +335,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
       <p class="mnote" id="mNote" hidden>This is an example. Untick “example” at the top to fill in your own.</p>
       <div class="mnav">
         <button class="btn" id="mBack">Back</button>
-        <button class="btn primary grow" id="mFwd">Next</button>
+        <button class="btn go grow" id="mFwd">Next</button>
       </div>
       <div class="mdet">Also edit: <button class="link" data-f="title">Title</button> · <button class="link" data-f="name">Signature</button> · <button class="link" data-f="date">Date</button></div>
     </div>
@@ -422,7 +434,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.12';
+const APP_VERSION = 'v1.13';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -1082,6 +1094,9 @@ function mSync(){
   if(sel.area===null) return;
   const n=state.areas.length, a=state.areas[sel.area];
   $('#mSwatch').style.background=PALETTE[a.c];
+  const hue=state.theme==='bw' ? '#2A2440' : mix(PALETTE[a.c],'#1B1630',.25);
+  ['#mPrevArea','#mNextArea'].forEach(id=>{ const b=$(id); b.style.color=hue; b.style.borderColor=mix(PALETTE[a.c],'#FFFFFF',.35); b.style.background=mix(PALETTE[a.c],'#FFFFFF',.88); });
+  document.querySelector('.mcard').dataset.ring=sel.ring;
   if(document.activeElement!==mName) mName.value=a.name;
   $('#mCount').textContent=`${sel.area+1} / ${n}`;
   document.querySelectorAll('[data-mring]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mring===sel.ring)));
@@ -1553,6 +1568,20 @@ function shapeBox(sh){
   const x=Math.min(...xs), y=Math.min(...ys); return {x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y};
 }
 const ring = key => () => sectorShape(0, RINGS[key].r0, RINGS[key].r1);
+const MOBILE_TOUR=[
+  {t:null, h:'Welcome to your Goal Wheel', p:'Let’s take a quick look at how it works. It only takes a minute.'},
+  {t:()=>elShape('#focusCv'), h:'Your wheel, up close', p:'This shows the part of your life you are working on. Swipe it left or right to turn the wheel, or tap a ring to jump straight to it.'},
+  {t:()=>elShape('.mhead'), h:'Which part of your life', p:'This is the slice you are filling in. Tap the name to change it, and use the ‹ and › arrows to move around the wheel.'},
+  {t:()=>elShape('.mtabs'), h:'GOALS, STEPS, FEELINGS', p:'Each slice has three rings. Blue is your goals, orange is small steps for the next two weeks, and pink is how you will feel when your goal comes true. Tap one to write in it.'},
+  {t:()=>elShape('#mText'), h:'Type here', p:'Write in this box. Your words appear on the wheel straight away, curved to fit.'},
+  {t:()=>elShape('.mnav'), h:'Next and Back', p:'Tap Next to move to the next ring, and then on to the next part of your life. Back takes you back one step.'},
+  {t:()=>elShape('.mdet'), h:'Title, signature and date', p:'Tap these to change the title, sign your name (or add a photo of your real signature) and set the date.'},
+  {t:()=>elShape('#mView'), h:'See the whole poster', p:'Tap “Whole poster” to see everything at once. Tap any slice there to jump back and fill it in.'},
+  {t:()=>elShape('#exBox'), h:'Example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
+  {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, tap Export to save your wheel as a phone or computer wallpaper, or let AI make a collage with a picture for each of your goals.'},
+  {t:()=>elShape('#moreBtn'), h:'More options', p:'Tap here to choose a phone or desktop poster, colour or black and white, and to save your wheel to a file or start a fresh one.'},
+  {t:()=>elShape('#tourBtn'), h:'That’s it!', p:'Tap Get started any time to see this tour again. Have fun dreaming big!'},
+];
 const TOUR=[
   {t:null, h:'Welcome to your Goal Wheel', p:'Let’s take a quick look at how it works. It only takes a minute.'},
   {t:ring('goals'), h:'Your GOALS', p:'The big outside ring is for your goals. Click on it, then type what you would love to have in this part of your life.'},
@@ -1595,8 +1624,10 @@ function placeTour(){
   }
   bubble.style.left=Math.max(8,Math.min(vw-bw-8,bx))+'px'; bubble.style.top=Math.max(8,Math.min(vh-bh-8,by))+'px';
 }
-function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); if(mqMobile.matches){ setMView('poster'); } else if(!editor.hidden) select(null,null,false); hover=null; render();
-  const mob=mqMobile.matches; activeTour=TOUR.filter(st=> mob ? st.m!==false : st.d!==false); tourIdx=0; tourEl.hidden=false; placeTour(); $('#tourNext').focus(); }
+
+function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); const mob=mqMobile.matches;
+  if(mob){ document.activeElement && document.activeElement.blur && document.activeElement.blur(); setMView('fill'); } else if(!editor.hidden) select(null,null,false);
+  hover=null; render(); activeTour = mob ? MOBILE_TOUR : TOUR.filter(st=>st.d!==false); tourIdx=0; tourEl.hidden=false; placeTour(); setTimeout(placeTour,80); $("#tourNext").focus(); }
 function endTour(){ tourEl.hidden=true; $('#tourBtn').focus(); }
 $('#tourBtn').addEventListener('click',startTour);
 $('#tourNext').addEventListener('click',()=>{ if(tourIdx<activeTour.length-1){ tourIdx++; placeTour(); } else endTour(); });
