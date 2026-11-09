@@ -440,7 +440,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.16';
+const APP_VERSION = 'v1.17';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -1457,7 +1457,7 @@ function loadImage(url, cors){
   });
 }
 function sceneUrl(prompt,w,h,seed){
-  if(IMAGE_WORKER) return `${IMAGE_WORKER}?prompt=${encodeURIComponent(prompt)}&seed=${seed}`;
+  if(IMAGE_WORKER) return `${IMAGE_WORKER}?prompt=${encodeURIComponent(prompt)}&seed=${seed}&w=${w}&h=${h}`;
   const q=`width=${w}&height=${h}&model=flux&nologo=true&seed=${seed}`;
   return POLLEN_KEY
     ? `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?${q}&key=${encodeURIComponent(POLLEN_KEY)}`
@@ -1674,6 +1674,11 @@ window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(
 // ---------- boot ----------
 $('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
+if(location.hash==='#collage-demo' || location.hash==='#collage-demo-phone'){
+  const fmt = location.hash.endsWith('phone') ? 'phone' : 'desktop';
+  history.replaceState(null,'',location.pathname+location.search);
+  setTimeout(()=>{ setExample(true); openCollage(fmt); },400);
+}
 loadSig();
 syncToggles(); syncCollageUI(); syncResLabels(); if(mqMobile.matches){ sel={area:0,ring:'goals'}; if(firstVisit) state.preview='phone'; } syncToggles(); select(null,null,false); relayout();
 mqMobile.addEventListener('change',()=>{ select(sel.area, sel.ring||'goals', false); relayout(); });

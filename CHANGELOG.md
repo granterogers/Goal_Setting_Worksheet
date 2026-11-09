@@ -2,6 +2,11 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.17
+- cloudflare-worker.js upgraded to FLUX.2 [klein] 4B (better prompt following), with automatic fallback to Flux Schnell; accepts picture sizes
+- Collage requests now send the picture size for each tile
+- One-click demo links: #collage-demo (desktop) and #collage-demo-phone build the example collage automatically
+
 ## v1.16
 - AI collage rebuilt:
   - Pictures now show the goal itself (objects, place, activity) instead of generic portraits; goals are no longer quoted, so no stray text
