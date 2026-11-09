@@ -2,6 +2,13 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.16
+- AI collage rebuilt:
+  - Pictures now show the goal itself (objects, place, activity) instead of generic portraits; goals are no longer quoted, so no stray text
+  - Cartoon style by default; storybook, 3D animated, watercolour and realistic photo also available
+  - All pictures are blended into one seamless collage with soft, overlapping edges (no more separate polaroids)
+  - ⚙ next to each collage item in the Export menu opens the settings: style, editable prompt (with reset), optional life area names
+
 ## v1.15
 - Fixed the gap in the "Show Example" label and capitalised Example
 

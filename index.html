@@ -192,6 +192,9 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .cbar{flex:none;width:120px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
 .cbar i{display:block;height:100%;width:0;background:var(--rose);transition:width .3s}
 .cprog .cstatus{margin:0}
+.cchk{display:flex;align-items:center;gap:8px;font-size:14px;margin-top:6px;cursor:pointer}
+.cchk input{width:16px;height:16px;accent-color:var(--rose)}
+.menu .cog{flex:none;width:38px;justify-content:center;padding:9px 0;color:var(--muted);font-size:15px}
 .csettings{border-top:1px solid var(--line);padding-top:12px}
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
@@ -285,8 +288,8 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
         <div class="mrow"><button data-dl="desktop">Desktop wallpaper <small data-reslabel="desktop"></small></button><button class="caret" data-res="desktop" aria-label="Choose desktop wallpaper size" aria-expanded="false">▾</button></div>
         <div class="mrow"><button data-dl="phone">Phone wallpaper <small data-reslabel="phone"></small></button><button class="caret" data-res="phone" aria-label="Choose phone wallpaper size" aria-expanded="false">▾</button></div>
         <hr>
-        <div class="mrow"><button data-dl="collage-desktop">AI collage, desktop <small data-reslabel="collage-desktop"></small></button><button class="caret" data-res="collage-desktop" aria-label="Choose desktop collage size" aria-expanded="false">▾</button></div>
-        <div class="mrow"><button data-dl="collage-phone">AI collage, phone <small data-reslabel="collage-phone"></small></button><button class="caret" data-res="collage-phone" aria-label="Choose phone collage size" aria-expanded="false">▾</button></div>
+        <div class="mrow"><button data-dl="collage-desktop">AI collage, desktop <small data-reslabel="collage-desktop"></small></button><button class="cog" data-cog="desktop" aria-label="Desktop collage settings" title="Collage settings">⚙</button><button class="caret" data-res="collage-desktop" aria-label="Choose desktop collage size" aria-expanded="false">▾</button></div>
+        <div class="mrow"><button data-dl="collage-phone">AI collage, phone <small data-reslabel="collage-phone"></small></button><button class="cog" data-cog="phone" aria-label="Phone collage settings" title="Collage settings">⚙</button><button class="caret" data-res="collage-phone" aria-label="Choose phone collage size" aria-expanded="false">▾</button></div>
         <div class="resmenu" id="resMenu" hidden></div>
       </div>
     </div>
@@ -401,14 +404,17 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
     <div class="csettings" id="cSettings" hidden>
       <label class="inp"><span>Picture style</span>
         <select id="cStyle">
-          <option value="board">Bright magazine photos</option>
-          <option value="photo">Dreamy cinematic photos</option>
-          <option value="watercolour">Watercolour paintings</option>
-          <option value="ethereal">Soft, glowing art</option>
+          <option value="cartoon">Cartoon (clear and colourful)</option>
+          <option value="storybook">Storybook illustration</option>
+          <option value="anim3d">3D animated film</option>
+          <option value="watercolour">Watercolour</option>
+          <option value="photo">Realistic photo</option>
         </select></label>
-      <label class="inp"><span>Extra words for every picture (optional)</span>
-        <textarea id="cExtra" rows="2" placeholder="For example: warm sunset light, a woman in her thirties, by the sea"></textarea></label>
-      <p class="note">Changes are used when you click “Make a new one”.</p>
+      <label class="inp"><span>Prompt for each picture <button type="button" class="link" id="cResetTpl">Reset to default</button></span>
+        <textarea id="cTpl" rows="5"></textarea></label>
+      <p class="note">One picture is made for each life area, then all of them are blended into one collage. In the prompt, {style} is the picture style, {goal} the goal, {steps} the next steps and {feeling} the feeling.</p>
+      <label class="cchk"><input type="checkbox" id="cLabels"> Show the life area names on the collage</label>
+      <button class="btn primary" id="cMake" style="width:100%;margin-top:10px">Make collage with these settings</button>
     </div>
   </div>
 </dialog></dialog>
@@ -434,7 +440,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.15';
+const APP_VERSION = 'v1.16';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -492,7 +498,7 @@ const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTi
 function blankState(){
   return {
     v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
-    cStyle:'board', cExtra:'',
+    cStyle:'cartoon', cTpl:'', cLabels:false, cV:2,
     res:{desktop:[3840,2160], phone:[1290,2796], 'collage-desktop':[3840,2160], 'collage-phone':[1290,2796]},
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
@@ -507,7 +513,10 @@ function normalise(s){
   out.areas = s.areas.map((a,i)=>({name:String(a.name).slice(0,40), c:Number.isInteger(a.c)?a.c%PALETTE.length:i%PALETTE.length,
     goals:String(a.goals||''), steps:String(a.steps||''), feel:String(a.feel||'')}));
   if(typeof out.sig!=='string' || !out.sig.startsWith('data:image/')) out.sig='';
-  if(typeof out.cExtra!=='string') out.cExtra='';
+  if(s.cV!==2){ out.cStyle='cartoon'; out.cTpl=''; out.cLabels=false; out.cV=2; }
+  if(!['cartoon','storybook','anim3d','watercolour','photo'].includes(out.cStyle)) out.cStyle='cartoon';
+  if(typeof out.cTpl!=='string') out.cTpl='';
+  out.cLabels=!!out.cLabels;
   { const d=blankState().res, r=(s.res && typeof s.res==='object') ? s.res : {};
     out.res={}; for(const k in d){ const v=r[k]; out.res[k]=(Array.isArray(v) && v.length===2 && v.every(n=>Number.isInteger(n) && n>=320 && n<=8000)) ? v : d[k]; } }
   if(!THEMES[out.theme]) out.theme='colour';
@@ -1344,85 +1353,100 @@ const IMAGE_WORKER = 'https://goal-wheel-images.money-mastery-crew-mcp.workers.d
 const POLLEN_KEY = '';
 const FAST = !!(IMAGE_WORKER || POLLEN_KEY);
 const STYLE_WORDS = {
-  board: 'A bright, joyful, high-quality editorial photograph, like a page from a beautiful magazine',
-  photo: 'A dreamy, cinematic photograph with soft golden light and gentle depth of field',
-  watercolour: 'A luminous watercolour painting with soft edges and gentle colours',
-  ethereal: 'Soft, glowing, painterly digital art with a serene, uplifting atmosphere',
+  cartoon: 'A clean, bright cartoon illustration with bold outlines, flat colours and simple shapes',
+  storybook: 'A charming children’s storybook illustration with soft gouache textures',
+  anim3d: 'A cheerful 3D animated-film style scene with soft lighting',
+  watercolour: 'A luminous watercolour illustration with soft edges',
+  photo: 'A vivid, realistic photograph',
 };
+const DEFAULT_TPL = '{style} clearly showing this dream coming true: {goal}. Show the key objects, place and activity so it is instantly obvious what it is about{steps}. Cheerful and uplifting, {feeling}. Soft pastel colour palette, wide scene, no text, no letters, no words, no signs.';
 const dlg=$('#collageDlg'), cCanvas=$('#cCanvas'), cctx=cCanvas.getContext('2d'), cStatus=$('#cStatus'), cBar=$('#cBar'),
-      cStyle=$('#cStyle'), cExtra=$('#cExtra'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn'), cDownload=$('#cDownload');
+      cStyle=$('#cStyle'), cSettings=$('#cSettings'), cSettingsBtn=$('#cSettingsBtn'), cDownload=$('#cDownload');
 const collageSize = f => state.res['collage-'+f];
 const firstLine = t => t.split(/\n+/).map(x=>x.trim()).filter(Boolean).slice(0,2).join(' and ').replace(/\s+/g,' ').slice(0,180);
 function sceneList(){
   return state.areas.map(a=>{
     const goal=firstLine(a.goals) || firstLine(a.steps);
     if(!goal) return null;
-    return {name:a.name.trim()||'', hue:PALETTE[a.c], goal, feel:firstLine(a.feel)};
+    return {name:a.name.trim()||'', hue:PALETTE[a.c], goal, steps:a.goals.trim()?firstLine(a.steps):'', feel:firstLine(a.feel)};
   }).filter(Boolean);
 }
+// Goals are written as "Learn to play the guitar": turn them into a scene description without quotes (quotes make the AI print text)
+const asScene = t => t.replace(/["“”]/g,'').replace(/^(i want to|i will|i'd like to|to)\s+/i,'').replace(/[.!]+$/,'')
+  .replace(/\b(and|then)\s+([A-Z])/g,(m,a,c)=>a+' '+c.toLowerCase())
+  .replace(/\bmy\b/gi,'their').replace(/\bme\b/gi,'them').replace(/\bmyself\b/gi,'themselves').replace(/\bI'm\b/g,'they’re').replace(/\bI\b/g,'they')
+  .replace(/^([A-Z])/,m=>m.toLowerCase()).trim();
 function scenePrompt(sc){
-  let p=`${STYLE_WORDS[state.cStyle]} showing a person happily living this dream: "${sc.goal}".`;
-  if(sc.feel) p+=` The mood is ${sc.feel.toLowerCase()}.`;
-  if(state.cExtra.trim()) p+=` ${state.cExtra.trim()}.`;
-  return p+' Beautiful composition, rich detail, natural light. No text, no words, no letters, no logos, no watermark.';
+  const tpl=(state.cTpl||DEFAULT_TPL);
+  return tpl
+    .replace(/\{style\}/g, STYLE_WORDS[state.cStyle])
+    .replace(/\{goal\}/g, asScene(sc.goal))
+    .replace(/\{steps\}/g, sc.steps ? `, with details like ${asScene(sc.steps)}` : '')
+    .replace(/\{feeling\}/g, sc.feel ? `the mood is ${asScene(sc.feel).toLowerCase()}` : 'the mood is joyful')
+    .replace(/\s+/g,' ').trim();
 }
-// grid of polaroid-style frames
+// Cells tile the whole canvas; pictures overlap and fade into each other
 function collageLayout(W,H,n,format){
-  let cols, rows;
-  if(format==='phone'){ cols = n<=4 ? 1 : 2; if(n>8) cols=3; rows=Math.ceil(n/cols); }
-  else { rows = n<=4 ? 1 : n<=8 ? 2 : 3; cols=Math.ceil(n/rows); }
-  const top = format==='phone' ? H*.2 : H*.05, bottom = format==='phone' ? H*.06 : H*.05, side=W*.05;
-  const cw=(W-side*2)/cols, ch=(H-top-bottom)/rows, cells=[];
-  for(let r=0;r<rows;r++){
-    const inRow=Math.min(cols, n-r*cols), off=(cols-inRow)*cw/2;
-    for(let c=0;c<inRow;c++) cells.push({x:side+off+c*cw, y:top+r*ch, w:cw, h:ch});
-  }
+  let rows;
+  if(format==='phone') rows = n<=2 ? n : n<=6 ? Math.ceil(n/2) : Math.ceil(n/2);
+  else rows = n<=3 ? 1 : n<=8 ? 2 : 3;
+  const perRow=[]; let left=n;
+  for(let r=0;r<rows;r++){ const k=Math.ceil(left/(rows-r)); perRow.push(k); left-=k; }
+  const ch=H/rows, cells=[];
+  perRow.forEach((k,r)=>{ const cw=W/k; for(let c=0;c<k;c++) cells.push({x:c*cw, y:r*ch, w:cw, h:ch, top:r===0, bottom:r===rows-1, left:c===0, right:c===k-1}); });
   return cells;
 }
-function frameGeom(cell,i){
-  const m=Math.min(cell.w,cell.h)*.07, fw=cell.w-m*2, fh=cell.h-m*2;
-  const pad=Math.min(fw,fh)*.045, cap=Math.min(fw,fh)*.15;
-  const pw=fw-pad*2, ph=fh-pad-cap;
-  const rot=((i*37)%7-3)*.012;   // gentle, varied tilt
-  return {cx:cell.x+cell.w/2, cy:cell.y+cell.h/2, fw, fh, pad, cap, pw, ph, rot};
+function featherTile(im, cell, ov, hue){
+  // picture drawn a bit larger than its cell, with soft fading edges wherever it meets a neighbour
+  const ex={l:cell.left?0:ov, r:cell.right?0:ov, t:cell.top?0:ov, b:cell.bottom?0:ov};
+  const w=Math.ceil(cell.w+ex.l+ex.r), h=Math.ceil(cell.h+ex.t+ex.b);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
+  if(im && im.naturalWidth){
+    const sc=Math.max(w/im.naturalWidth, h/im.naturalHeight), sw=w/sc, sh=h/sc;
+    x.drawImage(im,(im.naturalWidth-sw)/2,(im.naturalHeight-sh)/2,sw,sh,0,0,w,h);
+  } else {
+    const g=x.createLinearGradient(0,0,w,h); g.addColorStop(0,mix(hue,'#FFFFFF',.55)); g.addColorStop(1,mix(hue,'#FFFFFF',.8));
+    x.fillStyle=g; x.fillRect(0,0,w,h);
+    x.fillStyle=mix(hue,'#1B1630',.35); x.globalAlpha=.65; x.textAlign='center'; x.textBaseline='middle';
+    x.font=`500 ${Math.min(w,h)*.06}px ${F.ui.fam}`; if(im!=='idle') x.fillText(im===false?'Picture unavailable':'Painting…', w/2, h/2); x.globalAlpha=1;
+  }
+  const f=ov*2;
+  x.globalCompositeOperation='destination-out';
+  const fade=(x0,y0,x1,y1,rx,ry,rw,rh)=>{ const g=x.createLinearGradient(x0,y0,x1,y1); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(rx,ry,rw,rh); };
+  if(ex.l) fade(0,0,f,0, 0,0,f,h);
+  if(ex.r) fade(w,0,w-f,0, w-f,0,f,h);
+  if(ex.t) fade(0,0,0,f, 0,0,w,f);
+  if(ex.b) fade(0,h,0,h-f, 0,h-f,w,f);
+  return {c, x:cell.x-ex.l, y:cell.y-ex.t};
 }
 function drawCollage(ctx,W,H,format,scenes,imgs){
-  const T=THEMES[state.theme];
-  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.hypot(W,H)/2);
-  g.addColorStop(0, state.theme==='bw' ? '#FFFFFF' : '#FBF9FE'); g.addColorStop(1, state.theme==='bw' ? '#E9E9E9' : '#E7E1F2');
+  const g=ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#FBF3EA'); g.addColorStop(1,'#EDE6F6');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  if(!scenes.length) return;
   const cells=collageLayout(W,H,scenes.length,format);
-  scenes.forEach((sc,i)=>{
-    const f=frameGeom(cells[i],i);
-    ctx.save(); ctx.translate(f.cx,f.cy); ctx.rotate(f.rot);
-    ctx.shadowColor='rgba(30,20,50,.28)'; ctx.shadowBlur=f.fw*.05; ctx.shadowOffsetY=f.fw*.015;
-    ctx.fillStyle='#FFFFFF'; ctx.fillRect(-f.fw/2,-f.fh/2,f.fw,f.fh);
-    ctx.shadowColor='transparent';
-    const px=-f.fw/2+f.pad, py=-f.fh/2+f.pad, im=imgs[i];
-    if(im && im.naturalWidth){
-      const s=Math.max(f.pw/im.naturalWidth, f.ph/im.naturalHeight), sw=f.pw/s, sh=f.ph/s;
-      ctx.drawImage(im,(im.naturalWidth-sw)/2,(im.naturalHeight-sh)/2,sw,sh,px,py,f.pw,f.ph);
-    } else {
-      ctx.fillStyle=mix(sc.hue,'#FFFFFF',.72); ctx.fillRect(px,py,f.pw,f.ph);
-      ctx.fillStyle=mix(sc.hue,'#1B1630',.4); ctx.globalAlpha=.6; ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.font=`500 ${f.ph*.07}px ${F.ui.fam}`; ctx.fillText(im===false ? 'Picture unavailable' : 'Painting…', px+f.pw/2, py+f.ph/2); ctx.globalAlpha=1;
-    }
-    const label=sc.name || sc.goal;
-    let fs=f.cap*.62; ctx.font=`600 ${fs}px ${F.sign.fam}`;
-    while(fs>f.cap*.3 && ctx.measureText(label).width>f.pw){ fs*=.94; ctx.font=`600 ${fs}px ${F.sign.fam}`; }
-    ctx.fillStyle=state.theme==='bw' ? '#222' : mix(sc.hue,'#1B1630',.45); ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(label, 0, f.fh/2-f.cap/2);
-    ctx.restore();
-  });
+  const ov=Math.min(...cells.map(c=>Math.min(c.w,c.h)))*.17;
+  scenes.forEach((sc,i)=>{ const t=featherTile(imgs[i], cells[i], ov, sc.hue); ctx.drawImage(t.c, t.x, t.y); });
+  // gentle vignette ties everything together
+  const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.hypot(W,H)*.6);
+  v.addColorStop(0,'rgba(255,255,255,0)'); v.addColorStop(1,'rgba(40,25,60,.22)');
+  ctx.fillStyle=v; ctx.fillRect(0,0,W,H);
+  if(state.cLabels){
+    const fs=Math.min(W,H)*.032;
+    ctx.font=`600 ${fs}px ${F.sign.fam}`; ctx.textBaseline='middle'; ctx.textAlign='center';
+    scenes.forEach((sc,i)=>{ const c=cells[i], label=sc.name||''; if(!label) return;
+      const tw=ctx.measureText(label).width, px=c.x+c.w/2, py=c.y+c.h-fs*1.4-(format==='phone'&&c.bottom?H*.03:0);
+      ctx.fillStyle='rgba(255,255,255,.82)'; const pw=tw+fs*1.2, ph=fs*1.5, r=ph/2;
+      ctx.beginPath(); ctx.moveTo(px-pw/2+r,py-ph/2); ctx.arcTo(px+pw/2,py-ph/2,px+pw/2,py+ph/2,r); ctx.arcTo(px+pw/2,py+ph/2,px-pw/2,py+ph/2,r); ctx.arcTo(px-pw/2,py+ph/2,px-pw/2,py-ph/2,r); ctx.arcTo(px-pw/2,py-ph/2,px+pw/2,py-ph/2,r); ctx.fill();
+      ctx.fillStyle=mix(sc.hue,'#1B1630',.45); ctx.fillText(label,px,py); });
+  }
 }
 function setStatus(msg,err){ cStatus.textContent=msg; cStatus.classList.toggle('err',!!err); }
 let cJob=0, cFormat='desktop', cScenes=[], cImgs=[], cTainted=false, cBusy=false;
 function redrawCollage(){ const [W,H]=collageSize(cFormat); drawCollage(cctx,W,H,cFormat,cScenes,cImgs); }
 function sceneSize(format,n){
-  const [W,H]=collageSize(format), f=frameGeom(collageLayout(W,H,n,format)[0],0);
-  const scale=1024/Math.max(f.pw,f.ph);   // ask for about 1024px on the long side
-  const r16=v=>Math.max(256,Math.round(v*scale/16)*16);
-  return [r16(f.pw), r16(f.ph)];
+  const [W,H]=collageSize(format), c=collageLayout(W,H,n,format)[0];
+  const scale=1024/Math.max(c.w,c.h), r16=v=>Math.max(256,Math.round(v*scale/16)*16);
+  return [r16(c.w), r16(c.h)];
 }
 function loadImage(url, cors){
   return new Promise((res,rej)=>{
@@ -1441,7 +1465,7 @@ function sceneUrl(prompt,w,h,seed){
 }
 const wait = ms => new Promise(r=>setTimeout(r,ms));
 async function fetchScene(i,w,h,seed,job){
-  const url=sceneUrl(scenePrompt(cScenes[i]),w,h,seed+i);
+  const url=sceneUrl(scenePrompt(cScenes[i]),w,h,seed);
   for(let attempt=0; attempt<2; attempt++){
     try{ return await loadImage(url,true); }
     catch(e){
@@ -1482,14 +1506,20 @@ async function runCollage(){
   cDownload.disabled=false;
   setStatus(failed ? `${failed} picture${failed>1?'s':''} couldn’t be made. Click “Make a new one” to try again.` : 'Your collage is ready.', !!failed);
 }
-function syncCollageUI(){ cStyle.value=state.cStyle; cExtra.value=state.cExtra; }
+function syncCollageUI(){ cStyle.value=state.cStyle; $('#cTpl').value=state.cTpl||DEFAULT_TPL; $('#cLabels').checked=state.cLabels; }
 function showSettings(open){ cSettings.hidden=!open; cSettingsBtn.setAttribute('aria-expanded',String(open)); dlg.classList.toggle('setopen',open); }
-function openCollage(format){
-  closeMenus(); closePop(); syncCollageUI(); showSettings(false);
+function openCollage(format, settingsOnly){
+  closeMenus(); closePop(); syncCollageUI();
   cFormat=format; dlg.classList.toggle('desktop',format==='desktop'); dlg.classList.toggle('phone',format==='phone');
   $('#cTitle').textContent = format==='desktop' ? 'Your goal collage: desktop' : 'Your goal collage: phone';
   cDownload.textContent = format==='desktop' ? 'Download desktop collage' : 'Download phone collage';
   if(!dlg.open) dlg.showModal();
+  if(settingsOnly){
+    cJob++; cBusy=false; showSettings(true); cDownload.disabled=true; cBar.style.width='0';
+    const [W,H]=collageSize(format); cCanvas.width=W; cCanvas.height=H; cScenes=sceneList(); cImgs=cScenes.map(()=>'idle'); redrawCollage();
+    setStatus('Adjust the settings below, then click “Make collage with these settings”.'); return;
+  }
+  showSettings(false);
   fontsReady().then(runCollage);
 }
 function resetCollage(){ cJob++; cBusy=false; cImgs=[]; cScenes=[]; }
@@ -1498,8 +1528,12 @@ $('#closeDlg').addEventListener('click',()=>dlg.close());
 dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
 dlg.addEventListener('close',()=>{ cJob++; cBusy=false; });
 cStyle.addEventListener('change',()=>{ state.cStyle=cStyle.value; persist(); });
-cExtra.addEventListener('input',()=>{ state.cExtra=cExtra.value; persist(); });
+$('#cTpl').addEventListener('input',e=>{ const v=e.target.value.trim(); state.cTpl = (v===DEFAULT_TPL) ? '' : e.target.value; persist(); });
+$('#cResetTpl').addEventListener('click',()=>{ state.cTpl=''; $('#cTpl').value=DEFAULT_TPL; persist(); toast('Prompt reset'); });
+$('#cLabels').addEventListener('change',e=>{ state.cLabels=e.target.checked; persist(); if(cScenes.length) redrawCollage(); });
 $('#cAgain').addEventListener('click',()=>{ showSettings(false); runCollage(); });
+$('#cMake').addEventListener('click',()=>{ showSettings(false); runCollage(); });
+document.querySelectorAll('[data-cog]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); openCollage(b.dataset.cog,true); }));
 cDownload.addEventListener('click',()=>{
   if(cTainted){ toast('Your browser blocked saving this collage. Right-click it and choose “Save image as”.'); return; }
   try{ cCanvas.toBlob(b=>{ if(!b){ toast('The collage couldn’t be saved.'); return; } download(b,exportName('collage',cFormat,[cCanvas.width,cCanvas.height])); toast('Downloaded your collage'); },'image/png'); }
@@ -1522,7 +1556,7 @@ function exampleState(){
   e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
   return e;
 }
-const SHARED=['theme','preview','cStyle','cExtra','res'];
+const SHARED=['theme','preview','cStyle','cTpl','cLabels','res'];
 function setExample(on){
   if(on===exampleOn) return;
   closePop(); closeMenus(); if(!editor.hidden) select(null,null,false);
