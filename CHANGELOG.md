@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.14
+- AI collage connected to the free Cloudflare Workers AI picture service: fast, no sign-in, three pictures made at a time
+
 ## v1.13
 - Dedicated phone tour (12 steps) covering the close-up wheel, area arrows, ring tabs, text box, Next/Back, title/signature/date, Whole poster, example, Export and More
 - Goals, Steps and Feelings colour-coded (blue, orange, pink) on phone tabs and text box, and on the desktop editor labels
