@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.15
+- Fixed the gap in the "Show Example" label and capitalised Example
+
 ## v1.14
 - AI collage connected to the free Cloudflare Workers AI picture service: fast, no sign-in, three pictures made at a time
 

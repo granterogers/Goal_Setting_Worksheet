@@ -267,7 +267,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 
 <header class="bar">
   <button class="btn go" id="tourBtn">✓ Get started</button>
-  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"> <span class="hide-m">Show&nbsp;</span>example</label>
+  <label class="exbox" id="exBox"><input type="checkbox" id="exampleToggle"><span><span class="hide-m">Show </span>Example</span></label>
   <div class="spacer"></div>
   <div class="group"><span class="glabel">Output format</span>
     <div class="seg fmt" id="fmtSeg" role="group" aria-label="Output format">
@@ -332,7 +332,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
       </div>
       <textarea id="mText" rows="3"></textarea>
       <span class="meter" id="mMeter"><span><i></i></span><em></em></span>
-      <p class="mnote" id="mNote" hidden>This is an example. Untick “example” at the top to fill in your own.</p>
+      <p class="mnote" id="mNote" hidden>This is an example. Untick “Example” at the top to fill in your own.</p>
       <div class="mnav">
         <button class="btn" id="mBack">Back</button>
         <button class="btn go grow" id="mFwd">Next</button>
@@ -345,7 +345,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
-    <div id="edLocked"><h3>This is an example</h3><p>Look around for ideas. Untick “Show example” at the top to go back to your own wheel and write in it.</p></div>
+    <div id="edLocked"><h3>This is an example</h3><p>Look around for ideas. Untick “Show Example” at the top to go back to your own wheel and write in it.</p></div>
     <div id="edForm">
     <div class="area-head">
       <span class="swatch" id="areaSwatch"></span>
@@ -434,7 +434,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.14';
+const APP_VERSION = 'v1.15';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -966,7 +966,7 @@ canvas.addEventListener('click',ev=>{
   const h=hitTest(ev);
   if(!h){ closePop(); return; }
   if(mqMobile.matches && !h.field){ closePop(); setMView('fill'); select(h.area, h.label ? null : h.ring, false); return; }
-  if(exampleOn){ toast('This is an example. Untick “Show example” to edit your own wheel.'); return; }
+  if(exampleOn){ toast('This is an example. Untick “Show Example” to edit your own wheel.'); return; }
   if(h.field){ openPop(h.field, ev.clientX, ev.clientY); return; }
   closePop();
   select(h.area, h.label ? null : h.ring, true);
@@ -1140,7 +1140,7 @@ mText.addEventListener('blur',()=>{ appEl.classList.remove('typing'); requestAni
 mName.addEventListener('input',()=>{ if(sel.area===null||exampleOn) return; state.areas[sel.area].name=mName.value; persist(); schedule(); });
 mName.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); mText.focus(); } });
 document.querySelectorAll('.mdet [data-f]').forEach(b=>b.addEventListener('click',e=>{
-  if(exampleOn){ toast('This is an example. Untick “example” to edit your own wheel.'); return; }
+  if(exampleOn){ toast('This is an example. Untick “Example” to edit your own wheel.'); return; }
   const r=b.getBoundingClientRect(); e.stopPropagation(); openPop(b.dataset.f, window.innerWidth/2, Math.max(70, r.top-260));
 }));
 // keep the layout above the on-screen keyboard
@@ -1595,7 +1595,7 @@ const TOUR=[
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
   {t:()=>elShape('#fmtSeg'), m:false, h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
   {t:()=>elShape('#colSeg'), m:false, h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
-  {t:()=>elShape('#exBox'), h:'Show example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
+  {t:()=>elShape('#exBox'), h:'Show Example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
   {t:()=>elShape('#moreBtn'), d:false, h:'Desktop or phone, colour or not', p:'This menu also lets you choose a desktop or phone poster, and colour or black and white.'},
