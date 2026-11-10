@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.19
+- Background colour is now a single small colour wheel in the poster's bottom-left corner (colour version only); the palette pill is gone. Phones keep the choices under ⋯
+
 ## v1.18
 - Poster background palette (colour version only): small palette in the bottom-right on desktop, and under ⋯ on phones; 8 soft presets plus a rainbow picker for any colour. The wheel's tints blend with the chosen background, and exports use it too
 

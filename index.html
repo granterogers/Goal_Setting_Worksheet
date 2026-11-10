@@ -196,6 +196,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .cchk input{width:16px;height:16px;accent-color:var(--rose)}
 .menu .cog{flex:none;width:38px;justify-content:center;padding:9px 0;color:var(--muted);font-size:15px}
 .csettings{border-top:1px solid var(--line);padding-top:12px}
+.stage .bgwheel{position:absolute;width:22px;height:22px;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.25);border:2px solid #fff}
 .bgpal{position:fixed;right:14px;bottom:calc(26px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 9px 6px 13px;box-shadow:var(--shadow)}
 .bglab{font-size:12.5px;font-weight:600;color:var(--muted)}
 .bgsw{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -205,7 +206,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .bgcustom{position:relative;overflow:hidden;background:conic-gradient(#f66,#fd6,#6d8,#6cf,#86f,#f6c,#f66)}
 .bgcustom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;border:0;padding:0}
 .mopts .bgsw{margin:0 6px 8px}
-body.bw .bgpal, body.bw .colonly{display:none!important}
+body.bw .bgwheel, body.bw .colonly{display:none!important}
 @media (max-width:860px){ .bgpal{display:none!important} }
 @media (prefers-reduced-motion: reduce){ .bgsw button:hover,.bgcustom:hover{transform:none} }
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
@@ -359,6 +360,7 @@ body.bw .bgpal, body.bw .colonly{display:none!important}
   </div>
   <div class="stage" id="stage">
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
+    <label class="bgcustom bgwheel" id="bgWheel" title="Change the poster background colour"><input type="color" id="bgWheelIn" aria-label="Poster background colour"></label>
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
@@ -448,14 +450,13 @@ body.bw .bgpal, body.bw .colonly{display:none!important}
   </div>
 </div>
 
-<div class="bgpal" id="bgPal" role="group" aria-label="Poster background colour"><span class="bglab">Background</span><div class="bgsw"></div></div>
 <div class="brand" aria-label="App version">Goal Wheel <span class="ver" id="appVer"></span></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.18';
+const APP_VERSION = 'v1.19';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -964,7 +965,9 @@ function render(){
   if(mqMobile.matches && typeof mSync==='function'){ mSync(); renderFocus(); }
 }
 let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
-const relayout=()=>{ sizeCanvas(); render(); };
+const relayout=()=>{ sizeCanvas(); render(); placeBgWheel(); };
+function placeBgWheel(){ const w=document.getElementById('bgWheel'); if(!w) return; const pad=6;
+  w.style.left=(canvas.offsetLeft+pad)+'px'; w.style.top=(canvas.offsetTop+canvas.offsetHeight-pad-22)+'px'; }
 new ResizeObserver(()=>relayout()).observe(stage.parentElement);
 
 function hitTest(ev){
@@ -1265,12 +1268,14 @@ function buildBgSwatches(){
     c.innerHTML='<input type="color" aria-label="Choose any background colour">';
     const inp=c.querySelector('input'); inp.addEventListener('input',()=>setBg(inp.value)); box.append(c);
   });
+  const wi=document.getElementById('bgWheelIn'); wi.addEventListener('input',()=>setBg(wi.value));
   syncBg();
 }
 function syncBg(){
   const cur=(state.bg||'#F3F0F9').toLowerCase(), preset=BG_PRESETS.some(([,h])=>h.toLowerCase()===cur);
   document.querySelectorAll('.bgsw [data-bg]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.bg.toLowerCase()===cur)));
-  document.querySelectorAll('.bgcustom').forEach(c=>{ c.setAttribute('aria-pressed',String(!preset)); const i=c.querySelector('input'); if(document.activeElement!==i) i.value=cur; });
+  document.querySelectorAll('.bgsw .bgcustom').forEach(c=>{ c.setAttribute('aria-pressed',String(!preset)); });
+  document.querySelectorAll('.bgcustom input').forEach(i=>{ if(document.activeElement!==i) i.value=cur; });
   document.body.classList.toggle('bw', state.theme==='bw');
 }
 function setBg(hex){ state.bg=hex; persist(); syncBg(); render(); }
@@ -1667,7 +1672,7 @@ const TOUR=[
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
   {t:()=>elShape('#fmtSeg'), m:false, h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
   {t:()=>elShape('#colSeg'), m:false, h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
-  {t:()=>elShape('#bgPal'), m:false, onlyColour:true, h:'Background colour', p:'Pick a background colour for your poster here, or tap the rainbow circle to choose any colour you like.'},
+  {t:()=>elShape('#bgWheel'), m:false, onlyColour:true, h:'Background colour', p:'Click the little rainbow circle to choose any background colour for your poster.'},
   {t:()=>elShape('#exBox'), h:'Show Example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
