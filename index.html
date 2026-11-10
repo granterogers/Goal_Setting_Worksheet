@@ -196,7 +196,12 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .cchk input{width:16px;height:16px;accent-color:var(--rose)}
 .menu .cog{flex:none;width:38px;justify-content:center;padding:9px 0;color:var(--muted);font-size:15px}
 .csettings{border-top:1px solid var(--line);padding-top:12px}
-.stage .bgwheel{position:absolute;width:22px;height:22px;z-index:2;box-shadow:0 1px 4px rgba(0,0,0,.25);border:2px solid #fff}
+.stage .bgctl{position:absolute;z-index:2;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.88);border:1px solid rgba(42,36,64,.14);border-radius:999px;padding:3px 4px 3px 3px;box-shadow:0 1px 4px rgba(0,0,0,.12);font:600 11.5px/1 var(--sans);color:#2A2440;white-space:nowrap}
+.bgpick{display:flex;align-items:center;gap:6px;cursor:pointer;padding-right:4px}
+.bgpick .bgdot{width:18px;height:18px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+.bgpick:hover .bgdot{transform:scale(1.1)}
+.bgreset{border:0;border-left:1px solid rgba(42,36,64,.15);background:none;font:600 11.5px/1 var(--sans);color:#6E6888;padding:3px 6px 3px 7px;cursor:pointer;border-radius:0 999px 999px 0}
+.bgreset:hover{color:#D93D73}
 .bgpal{position:fixed;right:14px;bottom:calc(26px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 9px 6px 13px;box-shadow:var(--shadow)}
 .bglab{font-size:12.5px;font-weight:600;color:var(--muted)}
 .bgsw{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -206,7 +211,7 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .bgcustom{position:relative;overflow:hidden;background:conic-gradient(#f66,#fd6,#6d8,#6cf,#86f,#f6c,#f66)}
 .bgcustom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;border:0;padding:0}
 .mopts .bgsw{margin:0 6px 8px}
-body.bw .bgwheel, body.bw .colonly{display:none!important}
+body.bw .bgctl, body.bw .colonly{display:none!important}
 @media (max-width:860px){ .bgpal{display:none!important} }
 @media (prefers-reduced-motion: reduce){ .bgsw button:hover,.bgcustom:hover{transform:none} }
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
@@ -316,6 +321,7 @@ body.bw .bgwheel, body.bw .colonly{display:none!important}
           <div class="seg col" role="group" aria-label="Colours"><button data-theme="colour" aria-pressed="true">Colour</button><button data-theme="bw" aria-pressed="false">Black &amp; white</button></div>
           <p class="rtitle colonly">Poster background</p>
           <div class="bgsw colonly" role="group" aria-label="Poster background colour"></div>
+          <button class="colonly bgresetm" id="bgResetM" hidden>Reset background</button>
           <hr>
         </div>
         <button id="saveFile">Save to file</button>
@@ -360,7 +366,10 @@ body.bw .bgwheel, body.bw .colonly{display:none!important}
   </div>
   <div class="stage" id="stage">
     <canvas id="poster" role="img" aria-label="Your goal wheel"></canvas>
-    <label class="bgcustom bgwheel" id="bgWheel" title="Change the poster background colour"><input type="color" id="bgWheelIn" aria-label="Poster background colour"></label>
+    <div class="bgctl" id="bgWheel">
+      <label class="bgpick" title="Change the poster background colour"><span class="bgcustom bgdot"><input type="color" id="bgWheelIn" aria-label="Poster background colour"></span><span class="bgtext">Background colour</span></label>
+      <button type="button" class="bgreset" id="bgReset" title="Go back to the original background" hidden>Reset</button>
+    </div>
   </div>
 
   <aside class="editor" id="editor" hidden aria-label="Edit life area">
@@ -456,7 +465,7 @@ body.bw .bgwheel, body.bw .colonly{display:none!important}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.21';
+const APP_VERSION = 'v1.22';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -1007,8 +1016,8 @@ function render(){
 }
 let raf=0; const schedule=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(render); };
 const relayout=()=>{ sizeCanvas(); render(); placeBgWheel(); };
-function placeBgWheel(){ const w=document.getElementById('bgWheel'); if(!w) return; const pad=6;
-  w.style.left=(canvas.offsetLeft+pad)+'px'; w.style.top=(canvas.offsetTop+canvas.offsetHeight-pad-22)+'px'; }
+function placeBgWheel(){ const w=document.getElementById('bgWheel'); if(!w) return; const pad=8;
+  w.style.left=(canvas.offsetLeft+canvas.offsetWidth-pad-w.offsetWidth)+'px'; w.style.top=(canvas.offsetTop+canvas.offsetHeight-pad-w.offsetHeight)+'px'; }
 new ResizeObserver(()=>relayout()).observe(stage.parentElement);
 
 function hitTest(ev){
@@ -1318,8 +1327,12 @@ function syncBg(){
   document.querySelectorAll('.bgsw .bgcustom').forEach(c=>{ c.setAttribute('aria-pressed',String(!preset)); });
   document.querySelectorAll('.bgcustom input').forEach(i=>{ if(document.activeElement!==i) i.value=cur; });
   document.body.classList.toggle('bw', state.theme==='bw');
+  const rb=document.getElementById('bgReset'); if(rb){ rb.hidden = cur===DEFAULT_BG.toLowerCase(); if(typeof placeBgWheel==='function') placeBgWheel(); }
+  document.querySelectorAll('.bgresetm').forEach(b=>b.hidden = cur===DEFAULT_BG.toLowerCase());
 }
 function setBg(hex){ state.bg=hex; persist(); syncBg(); render(); }
+document.getElementById('bgReset').addEventListener('click',()=>{ setBg(DEFAULT_BG); toast('Background reset'); });
+document.getElementById('bgResetM').addEventListener('click',e=>{ e.stopPropagation(); setBg(DEFAULT_BG); toast('Background reset'); });
 
 // ---------- exports ----------
 async function fontsReady(){
@@ -1713,7 +1726,7 @@ const TOUR=[
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
   {t:()=>elShape('#fmtSeg'), m:false, h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
   {t:()=>elShape('#colSeg'), m:false, h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
-  {t:()=>elShape('#bgWheel'), m:false, onlyColour:true, h:'Background colour', p:'Click the little rainbow circle to choose any background colour for your poster.'},
+  {t:()=>elShape('#bgWheel'), m:false, onlyColour:true, h:'Background colour', p:'Click here to choose any background colour for your poster. The text changes colour automatically so it stays easy to read, and Reset takes you back to the original.'},
   {t:()=>elShape('#exBox'), h:'Show Example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},

@@ -2,6 +2,10 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.22
+- Background colour control moved to the poster's bottom-right corner, labelled "Background colour"
+- Reset button next to it (shown once the background has been changed) returns to the original colour; also under ⋯ on phones
+
 ## v1.21
 - Background colour wheel is back (bottom-left corner of the poster, colour version only)
 - Every poster colour now adapts to the chosen background: light backgrounds get dark text, dark backgrounds get light text and deeper slice colours; all text is checked for contrast (at least 4.5:1) and adjusted automatically
