@@ -2,6 +2,10 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.23
+- Sections can be removed again: "Remove this section" in the editing window (and "Remove section" on phones). The wheel redraws with fewer, larger slices; at least 3 sections stay
+- Removal lasts for this visit only: everything, including text, is still saved, so refreshing the page brings all sections back. ⋯ → "Restore removed sections" brings them back straight away
+
 ## v1.22
 - Background colour control moved to the poster's bottom-right corner, labelled "Background colour"
 - Reset button next to it (shown once the background has been changed) returns to the original colour; also under ⋯ on phones

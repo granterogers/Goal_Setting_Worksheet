@@ -214,6 +214,8 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 body.bw .bgctl, body.bw .colonly{display:none!important}
 @media (max-width:860px){ .bgpal{display:none!important} }
 @media (prefers-reduced-motion: reduce){ .bgsw button:hover,.bgcustom:hover{transform:none} }
+.edfoot{display:flex;justify-content:flex-end;margin-top:10px}
+.edfoot .link{font-size:12.5px}
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
 .pop #sigRemove{margin-top:8px}
@@ -324,6 +326,8 @@ body.bw .bgctl, body.bw .colonly{display:none!important}
           <button class="colonly bgresetm" id="bgResetM" hidden>Reset background</button>
           <hr>
         </div>
+        <button id="restoreAreas" hidden>Restore removed sections</button>
+        <hr id="restoreHr" hidden>
         <button id="saveFile">Save to file</button>
         <button id="openFile">Open a saved file</button>
         <hr>
@@ -361,7 +365,7 @@ body.bw .bgctl, body.bw .colonly{display:none!important}
         <button class="btn" id="mBack">Back</button>
         <button class="btn go grow" id="mFwd">Next</button>
       </div>
-      <div class="mdet">Also edit: <button class="link" data-f="title">Title</button> · <button class="link" data-f="name">Signature</button> · <button class="link" data-f="date">Date</button></div>
+      <div class="mdet">Also edit: <button class="link" data-f="title">Title</button> · <button class="link" data-f="name">Signature</button> · <button class="link" data-f="date">Date</button> · <button class="link danger" id="mRemove">Remove section</button></div>
     </div>
   </div>
   <div class="stage" id="stage">
@@ -395,6 +399,7 @@ body.bw .bgctl, body.bw .colonly{display:none!important}
       <button class="btn" id="nextArea">Next area</button>
       <button class="btn primary grow" id="doneBtn">Done</button>
     </div>
+    <div class="edfoot"><button class="link danger" id="removeArea" title="Hide this section from the poster. Refreshing the page brings it back.">Remove this section</button></div>
     </div>
   </aside>
 </main>
@@ -465,7 +470,7 @@ body.bw .bgctl, body.bw .colonly{display:none!important}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.22';
+const APP_VERSION = 'v1.23';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -594,7 +599,11 @@ let state = blankState(), firstVisit = true;
 try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)){ state=normalise(s); firstVisit=false; } } } catch(e){}
 let saveTimer=null;
 let exampleOn = false, ownState = null;
-let persist = function(){ if(exampleOn) return; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} },250); }
+// Sections removed in this visit are only hidden: everything is still saved, so a refresh brings them back.
+let allAreas = state.areas.slice(), removed = new Set();
+const fullState = () => removed.size ? Object.assign({}, state, {areas: allAreas}) : state;
+function resetRemovals(){ removed = new Set(); allAreas = state.areas.slice(); if(typeof syncRemoved==='function') syncRemoved(); }
+let persist = function(){ if(exampleOn) return; clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(fullState())); }catch(e){} },250); }
 
 let sel = {area:null, ring:null};
 let sigImg = null;           // uploaded signature picture, if any
@@ -1334,6 +1343,33 @@ function setBg(hex){ state.bg=hex; persist(); syncBg(); render(); }
 document.getElementById('bgReset').addEventListener('click',()=>{ setBg(DEFAULT_BG); toast('Background reset'); });
 document.getElementById('bgResetM').addEventListener('click',e=>{ e.stopPropagation(); setBg(DEFAULT_BG); toast('Background reset'); });
 
+// ---------- removing sections (this visit only) ----------
+function removeSection(i){
+  if(exampleOn){ toast('This is an example. Untick “Show Example” to change your own wheel.'); return; }
+  if(state.areas.length<=MIN_AREAS){ toast(`The wheel needs at least ${MIN_AREAS} sections`); return; }
+  const a=state.areas[i]; removed.add(a);
+  state.areas = allAreas.filter(x=>!removed.has(x));
+  sel={area:null,ring:null};
+  syncRemoved(); persist();
+  if(mqMobile.matches){ sel={area:Math.min(i,state.areas.length-1),ring:'goals'}; }
+  select(null,null,false); relayout();
+  toast(`“${a.name||'Section'}” removed. Refresh the page, or use ⋯ → Restore, to bring it back.`);
+}
+function restoreRemoved(silent){
+  if(!removed.size) return;
+  removed.clear(); state.areas = allAreas.slice(); syncRemoved();
+  if(!silent){ persist(); select(null,null,false); relayout(); toast('All sections are back'); }
+}
+function syncRemoved(){
+  const n=removed.size, b=document.getElementById('restoreAreas');
+  if(!b) return;
+  b.hidden=!n; document.getElementById('restoreHr').hidden=!n;
+  b.textContent = n===1 ? 'Restore 1 removed section' : `Restore ${n} removed sections`;
+}
+document.getElementById('removeArea').addEventListener('click',()=>{ if(sel.area!==null) removeSection(sel.area); });
+document.getElementById('mRemove').addEventListener('click',e=>{ e.stopPropagation(); if(sel.area!==null) removeSection(sel.area); });
+document.getElementById('restoreAreas').addEventListener('click',()=>{ closeMenus(); restoreRemoved(false); });
+
 // ---------- exports ----------
 async function fontsReady(){
   try{
@@ -1425,19 +1461,19 @@ document.querySelectorAll('.caret').forEach(c=>c.addEventListener('click',e=>{ e
 // ---------- more menu: areas, save / open / reset ----------
 $('#saveFile').addEventListener('click',()=>{
   closeMenus();
-  download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}), `${toSlug(personName()) ? toSlug(personName())+'-goal-wheel' : slug()}.json`); toast('Saved to file');
+  download(new Blob([JSON.stringify(fullState(),null,2)],{type:'application/json'}), `${toSlug(personName()) ? toSlug(personName())+'-goal-wheel' : slug()}.json`); toast('Saved to file');
 });
 const fileIn=$('#fileIn');
 $('#openFile').addEventListener('click',()=>{ closeMenus(); setExample(false); fileIn.click(); });
 fileIn.addEventListener('change',async()=>{
   const f=fileIn.files[0]; fileIn.value=''; if(!f) return;
-  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
+  try{ const s=JSON.parse(await f.text()); if(!validState(s)) throw 0; state=normalise(s); restoreDefaults(); resetRemovals(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout(); toast('Opened your saved wheel'); }
   catch(e){ toast('That file isn’t a saved goal wheel'); }
 });
 $('#resetAll').addEventListener('click',()=>{
   closeMenus(); setExample(false);
   if(!confirm('Clear everything and start a blank wheel? Save to file first if you want to keep this one.')) return;
-  state=blankState(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout();
+  state=blankState(); resetRemovals(); loadSig(); persist(); syncToggles(); syncResLabels(); syncCollageUI(); select(null,null,false); relayout();
 });
 
 let toastT=0;
@@ -1660,10 +1696,10 @@ function setExample(on){
   if(on){
     ownState=state; const e=exampleState();
     SHARED.forEach(k=>e[k]=ownState[k]);
-    exampleOn=true; state=e;
+    restoreRemoved(true); exampleOn=true; state=e; resetRemovals();
   } else {
     SHARED.forEach(k=>ownState[k]=state[k]);
-    exampleOn=false; state=ownState; ownState=null; persist();
+    exampleOn=false; state=ownState; ownState=null; resetRemovals(); persist();
   }
   $('#exampleToggle').checked=on;
   resetCollage();
@@ -1772,6 +1808,7 @@ window.addEventListener('resize',()=>{ if(!tourEl.hidden) requestAnimationFrame(
 // ---------- boot ----------
 $('#appVer').textContent=APP_VERSION;
 if(restoreDefaults()){ persist(); setTimeout(()=>toast('Your missing life area is back'),600); }
+resetRemovals();
 if(location.hash==='#collage-demo' || location.hash==='#collage-demo-phone'){
   const fmt = location.hash.endsWith('phone') ? 'phone' : 'desktop';
   history.replaceState(null,'',location.pathname+location.search);
@@ -1781,7 +1818,7 @@ loadSig();
 buildBgSwatches(); syncToggles(); syncCollageUI(); syncResLabels(); if(mqMobile.matches){ sel={area:0,ring:'goals'}; if(firstVisit) state.preview='phone'; } syncToggles(); select(null,null,false); relayout();
 mqMobile.addEventListener('change',()=>{ select(sel.area, sel.ring||'goals', false); relayout(); });
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
-window.__goalWheel={adaptColours, contrast, get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
+window.__goalWheel={adaptColours, contrast, get state(){return state}, set(s){state=normalise(s); restoreDefaults(); resetRemovals(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};
 })();
 </script>
 </body>
