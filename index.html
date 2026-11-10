@@ -196,6 +196,18 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
 .cchk input{width:16px;height:16px;accent-color:var(--rose)}
 .menu .cog{flex:none;width:38px;justify-content:center;padding:9px 0;color:var(--muted);font-size:15px}
 .csettings{border-top:1px solid var(--line);padding-top:12px}
+.bgpal{position:fixed;right:14px;bottom:calc(26px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 9px 6px 13px;box-shadow:var(--shadow)}
+.bglab{font-size:12.5px;font-weight:600;color:var(--muted)}
+.bgsw{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bgsw button,.bgcustom{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.18);cursor:pointer;padding:0;flex:none}
+.bgsw button:hover,.bgcustom:hover{transform:scale(1.12)}
+.bgsw [aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
+.bgcustom{position:relative;overflow:hidden;background:conic-gradient(#f66,#fd6,#6d8,#6cf,#86f,#f6c,#f66)}
+.bgcustom input{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);opacity:0;cursor:pointer;border:0;padding:0}
+.mopts .bgsw{margin:0 6px 8px}
+body.bw .bgpal, body.bw .colonly{display:none!important}
+@media (max-width:860px){ .bgpal{display:none!important} }
+@media (prefers-reduced-motion: reduce){ .bgsw button:hover,.bgcustom:hover{transform:none} }
 .pop .or{margin:10px 0 8px;text-align:center;font-size:12.5px;color:var(--muted)}
 .pop .tiny{font-size:12px;color:var(--muted);margin:6px 0 0}
 .pop #sigRemove{margin-top:8px}
@@ -301,6 +313,8 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
           <div class="seg fmt" role="group" aria-label="Output format"><button data-preview="desktop" aria-pressed="true">Desktop</button><button data-preview="phone" aria-pressed="false">Phone</button></div>
           <p class="rtitle">Colours</p>
           <div class="seg col" role="group" aria-label="Colours"><button data-theme="colour" aria-pressed="true">Colour</button><button data-theme="bw" aria-pressed="false">Black &amp; white</button></div>
+          <p class="rtitle colonly">Poster background</p>
+          <div class="bgsw colonly" role="group" aria-label="Poster background colour"></div>
           <hr>
         </div>
         <button id="saveFile">Save to file</button>
@@ -434,13 +448,14 @@ dialog::backdrop{background:rgba(23,20,31,.45)}
   </div>
 </div>
 
+<div class="bgpal" id="bgPal" role="group" aria-label="Poster background colour"><span class="bglab">Background</span><div class="bgsw"></div></div>
 <div class="brand" aria-label="App version">Goal Wheel <span class="ver" id="appVer"></span></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.17';
+const APP_VERSION = 'v1.18';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -472,8 +487,8 @@ const mix = (a,b,t) => { const A=hex2rgb(a),B=hex2rgb(b); return rgb2hex(A.map((
 
 const THEMES = {
   colour: {
-    bg:'#F3F0F9', ink:'#2A2440', muted:'#7A7393',
-    fill:(hue,ring) => mix(hue,'#F3F0F9',{goals:.80,steps:.62,feel:.40}[ring]),
+    get bg(){ return (typeof state!=='undefined' && state.bg) || '#F3F0F9'; }, ink:'#2A2440', muted:'#7A7393',
+    fill(hue,ring){ return mix(hue,this.bg,{goals:.80,steps:.62,feel:.40}[ring]); },
     text:hue => mix(hue,'#1B1630',.80),
     label:hue => mix(hue,'#1B1630',.38),
     spoke:'#FFFFFF', spokeW:.016, ringLine:'rgba(255,255,255,.85)', dots:false, outline:null,
@@ -498,7 +513,7 @@ const todayISO = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTi
 function blankState(){
   return {
     v:1, title:'My Goals', name:'', sig:'', date:todayISO(), theme:'colour', preview:'desktop', paper:'a4',
-    cStyle:'cartoon', cTpl:'', cLabels:false, cV:2,
+    cStyle:'cartoon', cTpl:'', cLabels:false, cV:2, bg:'#F3F0F9',
     res:{desktop:[3840,2160], phone:[1290,2796], 'collage-desktop':[3840,2160], 'collage-phone':[1290,2796]},
     areas: DEFAULT_AREAS.map((n,i)=>({name:n, c:i, goals:'', steps:'', feel:''}))
   };
@@ -517,6 +532,7 @@ function normalise(s){
   if(!['cartoon','storybook','anim3d','watercolour','photo'].includes(out.cStyle)) out.cStyle='cartoon';
   if(typeof out.cTpl!=='string') out.cTpl='';
   out.cLabels=!!out.cLabels;
+  if(typeof out.bg!=='string' || !/^#[0-9a-fA-F]{6}$/.test(out.bg)) out.bg='#F3F0F9';
   { const d=blankState().res, r=(s.res && typeof s.res==='object') ? s.res : {};
     out.res={}; for(const k in d){ const v=r[k]; out.res[k]=(Array.isArray(v) && v.length===2 && v.every(n=>Number.isInteger(n) && n>=320 && n<=8000)) ? v : d[k]; } }
   if(!THEMES[out.theme]) out.theme='colour';
@@ -1230,12 +1246,34 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeMenus(); clo
 function syncToggles(){
   document.querySelectorAll('[data-preview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.preview===state.preview)));
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.theme===state.theme)));
+  if(typeof syncBg==='function') syncBg();
 }
 document.querySelectorAll('[data-preview]').forEach(b=>b.addEventListener('click',()=>{
   if(state.preview===b.dataset.preview) return;
   state.preview=b.dataset.preview; persist(); syncToggles(); syncCollageUI(); relayout();
 }));
 document.querySelectorAll('[data-theme]').forEach(b=>b.addEventListener('click',()=>{ state.theme=b.dataset.theme; persist(); syncToggles(); render(); }));
+
+// ---------- poster background colour (colour version only) ----------
+const BG_PRESETS=[['Lilac','#F3F0F9'],['Cream','#FBF6EC'],['Blush','#FBEEF1'],['Peach','#FDF0E6'],['Mint','#EDF7F1'],['Sky','#ECF3FB'],['Sage','#EEF2E7'],['White','#FFFFFF']];
+function buildBgSwatches(){
+  document.querySelectorAll('.bgsw').forEach(box=>{
+    box.innerHTML='';
+    BG_PRESETS.forEach(([name,hex])=>{ const b=document.createElement('button'); b.type='button'; b.style.background=hex; b.dataset.bg=hex;
+      b.setAttribute('aria-label',name+' background'); b.title=name; b.addEventListener('click',()=>setBg(hex)); box.append(b); });
+    const c=document.createElement('label'); c.className='bgcustom'; c.title='Choose any colour';
+    c.innerHTML='<input type="color" aria-label="Choose any background colour">';
+    const inp=c.querySelector('input'); inp.addEventListener('input',()=>setBg(inp.value)); box.append(c);
+  });
+  syncBg();
+}
+function syncBg(){
+  const cur=(state.bg||'#F3F0F9').toLowerCase(), preset=BG_PRESETS.some(([,h])=>h.toLowerCase()===cur);
+  document.querySelectorAll('.bgsw [data-bg]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.bg.toLowerCase()===cur)));
+  document.querySelectorAll('.bgcustom').forEach(c=>{ c.setAttribute('aria-pressed',String(!preset)); const i=c.querySelector('input'); if(document.activeElement!==i) i.value=cur; });
+  document.body.classList.toggle('bw', state.theme==='bw');
+}
+function setBg(hex){ state.bg=hex; persist(); syncBg(); render(); }
 
 // ---------- exports ----------
 async function fontsReady(){
@@ -1556,7 +1594,7 @@ function exampleState(){
   e.areas=EXAMPLE_AREAS.map(([name,goals,steps,feel],i)=>({name,c:i,goals,steps,feel}));
   return e;
 }
-const SHARED=['theme','preview','cStyle','cTpl','cLabels','res'];
+const SHARED=['theme','preview','cStyle','cTpl','cLabels','res','bg'];
 function setExample(on){
   if(on===exampleOn) return;
   closePop(); closeMenus(); if(!editor.hidden) select(null,null,false);
@@ -1629,6 +1667,7 @@ const TOUR=[
   {t:()=>fieldShape('date'), h:'The date', p:'Click the date to change it.'},
   {t:()=>elShape('#fmtSeg'), m:false, h:'Output format', p:'Pick Desktop for your computer, or Phone to make a tall picture for your phone.'},
   {t:()=>elShape('#colSeg'), m:false, h:'Colour or black & white', p:'Choose a colourful wheel, or black and white like a printed worksheet.'},
+  {t:()=>elShape('#bgPal'), m:false, onlyColour:true, h:'Background colour', p:'Pick a background colour for your poster here, or tap the rainbow circle to choose any colour you like.'},
   {t:()=>elShape('#exBox'), h:'Show Example', p:'Tick this to see a wheel that is already filled in, for ideas. Untick it to go back to your own. Your own wheel is kept safe.'},
   {t:()=>elShape('#dlBtn'), h:'Export', p:'When you are happy, click Export. Save your wheel as a wallpaper for your computer or phone, or let AI make a collage with a picture for each of your goals.'},
   {t:()=>elShape('#moreBtn'), h:'Save your work', p:'Click here to save your wheel to a file, open it again later, or start a fresh one. Your wheel is also kept in this browser for you.'},
@@ -1661,7 +1700,7 @@ function placeTour(){
 
 function startTour(){ closeMenus(); closePop(); if(dlg.open) dlg.close(); const mob=mqMobile.matches;
   if(mob){ document.activeElement && document.activeElement.blur && document.activeElement.blur(); setMView('fill'); } else if(!editor.hidden) select(null,null,false);
-  hover=null; render(); activeTour = mob ? MOBILE_TOUR : TOUR.filter(st=>st.d!==false); tourIdx=0; tourEl.hidden=false; placeTour(); setTimeout(placeTour,80); $("#tourNext").focus(); }
+  hover=null; render(); activeTour = mob ? MOBILE_TOUR : TOUR.filter(st=>st.d!==false && !(st.onlyColour && state.theme!=='colour')); tourIdx=0; tourEl.hidden=false; placeTour(); setTimeout(placeTour,80); $("#tourNext").focus(); }
 function endTour(){ tourEl.hidden=true; $('#tourBtn').focus(); }
 $('#tourBtn').addEventListener('click',startTour);
 $('#tourNext').addEventListener('click',()=>{ if(tourIdx<activeTour.length-1){ tourIdx++; placeTour(); } else endTour(); });
@@ -1680,7 +1719,7 @@ if(location.hash==='#collage-demo' || location.hash==='#collage-demo-phone'){
   setTimeout(()=>{ setExample(true); openCollage(fmt); },400);
 }
 loadSig();
-syncToggles(); syncCollageUI(); syncResLabels(); if(mqMobile.matches){ sel={area:0,ring:'goals'}; if(firstVisit) state.preview='phone'; } syncToggles(); select(null,null,false); relayout();
+buildBgSwatches(); syncToggles(); syncCollageUI(); syncResLabels(); if(mqMobile.matches){ sel={area:0,ring:'goals'}; if(firstVisit) state.preview='phone'; } syncToggles(); select(null,null,false); relayout();
 mqMobile.addEventListener('change',()=>{ select(sel.area, sel.ring||'goals', false); relayout(); });
 if(document.fonts){ document.fonts.ready.then(()=>{ widthCache.clear(); render(); }); fontsReady().then(()=>{ widthCache.clear(); render(); }); }
 window.__goalWheel={get state(){return state}, set(s){state=normalise(s); restoreDefaults(); loadSig(); syncToggles(); syncCollageUI(); relayout();}, renderOff, select, openPop, startTour, processSig};

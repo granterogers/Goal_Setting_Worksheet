@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.18
+- Poster background palette (colour version only): small palette in the bottom-right on desktop, and under ⋯ on phones; 8 soft presets plus a rainbow picker for any colour. The wheel's tints blend with the chosen background, and exports use it too
+
 ## v1.17
 - cloudflare-worker.js upgraded to FLUX.2 [klein] 4B (better prompt following), with automatic fallback to Flux Schnell; accepts picture sizes
 - Collage requests now send the picture size for each tile
