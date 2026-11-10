@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.20
+- Removed the poster background colour picker (desktop and phone); posters use the standard background again
+
 ## v1.19
 - Background colour is now a single small colour wheel in the poster's bottom-left corner (colour version only); the palette pill is gone. Phones keep the choices under ⋯
 
