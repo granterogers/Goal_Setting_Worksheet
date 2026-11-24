@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.25
+- Browser tab icon: a small colour wheel with the pink heart, matching the poster (SVG, plus PNG and Apple home-screen versions)
+
 ## v1.24
 - The poster date now shows today's date every time the page loads, unless the person has picked a date themselves (a picked date is kept)
 
