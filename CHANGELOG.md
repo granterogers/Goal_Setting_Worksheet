@@ -2,6 +2,9 @@
 
 The current version is shown in the bottom-right corner of the app.
 
+## v1.24
+- The poster date now shows today's date every time the page loads, unless the person has picked a date themselves (a picked date is kept)
+
 ## v1.23
 - Sections can be removed again: "Remove this section" in the editing window (and "Remove section" on phones). The wheel redraws with fewer, larger slices; at least 3 sections stay
 - Removal lasts for this visit only: everything, including text, is still saved, so refreshing the page brings all sections back. ⋯ → "Restore removed sections" brings them back straight away

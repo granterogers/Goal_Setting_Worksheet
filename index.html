@@ -470,7 +470,7 @@ body.bw .bgctl, body.bw .colonly{display:none!important}
 <script>
 (() => {
 // ---------- constants ----------
-const APP_VERSION = 'v1.23';
+const APP_VERSION = 'v1.24';
 const PALETTE = ['#8A63D2','#E0457B','#4C84E0','#E69A2E','#3FAE73','#5E6AD2','#F07A5A','#C25FB8','#2B9AA0','#9AA83A'];
 const DEFAULT_AREAS = ['Spiritual development','Intimate relationships','Career','Friends & family','Health','Finance','Hobbies'];
 // radii as fractions of R (outer edge of the goals ring)
@@ -588,6 +588,7 @@ function normalise(s){
   if(!['cartoon','storybook','anim3d','watercolour','photo'].includes(out.cStyle)) out.cStyle='cartoon';
   if(typeof out.cTpl!=='string') out.cTpl='';
   out.cLabels=!!out.cLabels;
+  out.dateSet=!!out.dateSet;
   if(typeof out.bg!=='string' || !/^#[0-9a-fA-F]{6}$/.test(out.bg)) out.bg='#F3F0F9';
   { const d=blankState().res, r=(s.res && typeof s.res==='object') ? s.res : {};
     out.res={}; for(const k in d){ const v=r[k]; out.res[k]=(Array.isArray(v) && v.length===2 && v.every(n=>Number.isInteger(n) && n>=320 && n<=8000)) ? v : d[k]; } }
@@ -597,6 +598,7 @@ function normalise(s){
 }
 let state = blankState(), firstVisit = true;
 try { const raw = localStorage.getItem(STORE_KEY); if(raw){ const s=JSON.parse(raw); if(validState(s)){ state=normalise(s); firstVisit=false; } } } catch(e){}
+if(!state.dateSet) state.date=todayISO();   // today's date unless the person picked one
 let saveTimer=null;
 let exampleOn = false, ownState = null;
 // Sections removed in this visit are only hidden: everything is still saved, so a refresh brings them back.
@@ -1253,7 +1255,7 @@ function openPop(field,x,y){
   fpInput.focus(); if(cfg.type==='text') fpInput.select();
 }
 function closePop(){ if(!pop.hidden){ pop.hidden=true; popField=null; } }
-fpInput.addEventListener('input',()=>{ if(!popField) return; state[popField]=fpInput.value; persist(); schedule(); });
+fpInput.addEventListener('input',()=>{ if(!popField) return; state[popField]=fpInput.value; if(popField==='date') state.dateSet=true; persist(); schedule(); });
 fpInput.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key==='Escape'){ e.preventDefault(); closePop(); } });
 $('#fpDone').addEventListener('click',closePop);
 const sigFile=$('#sigFile');
